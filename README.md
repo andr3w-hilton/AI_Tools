@@ -1,2 +1,4 @@
-# AI_Tools
-This repo will hold all the code and scripts I have created whilst learning about Ai and LLM's
+# :paperclip: AI Tools
+
+This space will be used to track and host my projects whilst I am learning all things Python and AI.\
+(Mainly Pytorch and LLM based projects) 
