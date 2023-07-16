@@ -23,15 +23,16 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 today = datetime.date.today()
 
+
 # 1. Data Collection
 def collect_data():
     url = "https://archive-api.open-meteo.com/v1/era5"
     params = {
         "latitude": 52.0417,
         "longitude": -0.7558,
-        "start_date": "2021-01-01",
+        "start_date": "2022-08-01",  # date format: YYYY-MM-DD
         "timezone": "GMT",
-        "end_date": today,
+        "end_date": "2022-08-31",
         "daily": ["apparent_temperature_max", "apparent_temperature_min"]
     }
     response = requests.get(url, params=params)
@@ -49,7 +50,7 @@ def collect_data():
 
 # 2. Data Preprocessing (df = dataframe)
 def preprocess_data(df):
-    # One-shot encoding of the month
+    # One-hot encoding of the month
     df = pd.get_dummies(df, columns=['month'])
 
     # Select numeric columns only
@@ -195,17 +196,28 @@ def main():
     num_epochs = 250
     learning_rate = 0.001
     input_size = 3
-    hidden_size = 256
+    hidden_size = 64
     num_layers = 2
 
     # Data collection
     df = collect_data()
+
+    # Print the dataframe
+    print(df.head())
+    print(df.describe())
 
     # Data preprocessing
     data, input_scaler, output_scaler = preprocess_data(df)
 
     # Feature selection/engineering
     X, y = create_sequences(data, seq_length)
+
+    # Check if sequences of the correct length were generated
+    if len(X) == 0 or len(y) == 0:
+        raise ValueError(
+            "The date range is too short to create sequences of the specified length. Please choose a longer date range.")
+
+    # Continue with the rest of the code...
 
     # Splitting data into training and testing sets
     train_size = int(len(y) * 0.67)
