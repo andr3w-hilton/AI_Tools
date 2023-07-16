@@ -17,7 +17,7 @@ def get_forecast():
     # Get current day's date
     current_date_str = datetime.now().strftime('%Y-%m-%d')
 
-    # Find the index of today's noon temperature
+    # Find the index of tomorrow's noon temperature
     for i, time in enumerate(data['hourly']['time']):
         if f"{current_date_str}T12:00" in time:
             return data['hourly']['apparent_temperature'][i]
@@ -31,7 +31,7 @@ def main():
     if forecast is not None:
         print(f"Tomorrow's weather forecast at 12:00 is: {forecast} degrees.")
     else:
-        print("Could not find today's weather forecast at 12:00.")
+        print("Could not find tomorrow's weather forecast at 12:00.")
 
 
 if __name__ == "__main__":
