@@ -1,3 +1,4 @@
+# This game was made in a single prompt using Claude
 # This is a simple game of battleships. The user has 3 turns to guess the location of the ship.
 
 TODO = """
