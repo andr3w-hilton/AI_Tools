@@ -1,0 +1,28 @@
+/venv/
+/AI_venv/
+/main.py
+
+# IDE
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Models and data
+*.pth
+*.h5
+*.pkl
+*.model

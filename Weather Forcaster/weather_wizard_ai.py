@@ -32,7 +32,7 @@ def collect_data():
         "longitude": -0.7558,
         "start_date": "2022-08-01",  # date format: YYYY-MM-DD
         "timezone": "GMT",
-        "end_date": "2022-08-31",
+        "end_date": "2024-04-30",
         "daily": ["apparent_temperature_max", "apparent_temperature_min"]
     }
     response = requests.get(url, params=params)
