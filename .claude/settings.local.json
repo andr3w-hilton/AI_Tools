@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(findstr:*)",
+      "Bash(pip show:*)",
+      "Bash(\"C:\\Users\\ahilt\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\" -m pip install torch numpy matplotlib)",
+      "Bash(git config:*)",
+      "Bash(git fetch:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

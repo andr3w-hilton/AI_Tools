@@ -1,0 +1,14 @@
+torch>=2.0.0
+numpy>=1.24.0
+matplotlib>=3.7.0
+
+# Note: PyTorch currently supports Python 3.8-3.12
+# If you're using Python 3.13+, you may need to:
+# 1. Use a Python 3.12 or earlier environment
+# 2. Wait for PyTorch to release support for newer Python versions
+# 3. Build PyTorch from source (advanced)
+
+# Installation instructions:
+# For CPU-only: pip install torch --index-url https://download.pytorch.org/whl/cpu
+# For GPU (CUDA 11.8): pip install torch --index-url https://download.pytorch.org/whl/cu118
+# For GPU (CUDA 12.1): pip install torch --index-url https://download.pytorch.org/whl/cu121
