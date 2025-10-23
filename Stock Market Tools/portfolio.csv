@@ -1,7 +1,6 @@
-,Company Name,Current Price,Avg Price,Rating
-0,VANGUARD FUNDS PLC VANGUARD S&P,64.43499755859375,64.1,[32mSafe: Buy/Hold[0m
-1,"Tesla, Inc.",273.6180114746094,257.9,[32mSafe: Buy/Hold[0m
-2,"Amazon.com, Inc.",130.52000427246094,129.3,[32mSafe: Buy/Hold[0m
-3,Apple Inc.,190.04100036621094,191.6,[33mCaution: Hold[0m
-4,NVIDIA Corporation,437.9700012207031,416.2,[32mSafe: Buy/Hold[0m
-5,"SoundHound AI, Inc.",3.618799924850464,4.1,[41mUrgent: Sell[0m
+,Company Name,Current Price,Price I Paid,Rating
+0,VANGUARD FUNDS PLC VANGUARD S&P,96.3499984741211,64.1,[32mSafe: Buy/Hold[0m
+1,"Tesla, Inc.",438.9700012207031,257.9,[32mSafe: Buy/Hold[0m
+2,"Amazon.com, Inc.",217.9499969482422,129.3,[32mSafe: Buy/Hold[0m
+3,Apple Inc.,258.45001220703125,191.6,[32mSafe: Buy/Hold[0m
+4,"SoundHound AI, Inc.",17.760000228881836,4.1,[32mSafe: Buy/Hold[0m
