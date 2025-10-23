@@ -38,7 +38,6 @@ portfolio = {
     'TSLA': 257.9,  # Price paid for Tesla
     'AMZN': 129.3,  # Price paid for Amazon
     'AAPL': 191.6,  # Price paid for Apple
-    'NVDA': 416.2,  # Price paid for Nvidia
     'SOUN': 04.1  # Price paid for Sound Hound
 }
 
@@ -60,7 +59,7 @@ def get_action(current_price, price_paid):
     elif current_price < (0.9 * price_paid):
         return bkgrn_colors.RED + 'Urgent: Sell' + colors.RESET
     else:
-        return colors.YELLOW + 'Caution: Hold' + bkgrn_colors.RESET
+        return colors.YELLOW + 'Caution: Hold' + colors.RESET
 
 
 data = {
@@ -86,7 +85,7 @@ df = pd.DataFrame(data)
 df.rename(columns={
     'company_name': 'Company Name',
     'current_price': 'Current Price',
-    'price_paid': 'Avg Price',
+    'price_paid': 'Price I Paid',
     'action': 'Rating'
 }, inplace=True)
 
