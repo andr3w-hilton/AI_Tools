@@ -111,6 +111,7 @@ body {
     background: #f8f9fa;
     border-radius: 10px;
     border-left: 4px solid #667eea;
+    border-right: 4px solid #667eea;
 }
 
 .notification-prompt {
