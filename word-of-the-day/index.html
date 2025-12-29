@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#6b46c1">
+    <title>Word of the Day</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Word of the Day</h1>
+            <div class="date" id="currentDate"></div>
+        </div>
+
+        <div class="word-card" id="wordCard">
+            <div class="weekend-message" id="weekendMessage" style="display: none;">
+                <div class="weekend-icon">📚</div>
+                <h2>Enjoy Your Weekend!</h2>
+                <p>New words return on Monday</p>
+            </div>
+
+            <div class="word-content" id="wordContent">
+                <div class="word" id="word"></div>
+                <div class="pronunciation" id="pronunciation"></div>
+                <div class="part-of-speech" id="partOfSpeech"></div>
+                <div class="definition" id="definition"></div>
+                <div class="example" id="example"></div>
+            </div>
+        </div>
+
+        <!-- Notification prompt - commented out until backend server is set up -->
+        <!-- <div class="notification-prompt" id="notificationPrompt">
+            <p>Enable notifications to get your daily word?</p>
+            <button id="enableNotifications" class="btn-enable">Enable Notifications</button>
+        </div> -->
+
+        <div class="footer">
+            <p>Made with love for lexiphiles and verbivores</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
