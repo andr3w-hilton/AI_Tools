@@ -2,6 +2,17 @@
 /AI_venv/
 /main.py
 
+# Sensitive files - NEVER commit these
+bot_config.json
+**/bot_config.json
+authorized_faces.pkl
+authorized_face.pkl
+keylog_*.txt
+*.env
+.env.*
+secrets.json
+credentials.json
+
 # IDE
 .idea/
 .vscode/
