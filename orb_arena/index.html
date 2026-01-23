@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orb Arena - Multiplayer Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a1a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            color: #fff;
+        }
+
+        /* Start Screen */
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a0a1a 100%);
+            z-index: 100;
+        }
+
+        #start-screen h1 {
+            font-size: 4rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #00ff88, #00d4ff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 50px rgba(0, 255, 136, 0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+            text-align: center;
+            width: 100%;
+            padding: 0 20px;
+        }
+
+        @media (max-width: 480px) {
+            #start-screen h1 {
+                font-size: 2.5rem;
+            }
+            #start-screen p {
+                font-size: 1rem;
+            }
+            .instructions {
+                font-size: 0.85rem;
+                padding: 0 15px;
+            }
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.5)); }
+            to { filter: drop-shadow(0 0 40px rgba(0, 212, 255, 0.8)); }
+        }
+
+        #start-screen p {
+            color: #888;
+            margin-bottom: 2rem;
+            font-size: 1.2rem;
+        }
+
+        #name-input {
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            border: 2px solid #333;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            width: 300px;
+            text-align: center;
+            margin-bottom: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        #name-input:focus, #server-input:focus {
+            border-color: #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        #server-input {
+            padding: 0.7rem 1.5rem;
+            font-size: 0.9rem;
+            border: 2px solid #333;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            width: 300px;
+            text-align: center;
+            margin-bottom: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        #play-btn {
+            padding: 1rem 3rem;
+            font-size: 1.3rem;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(90deg, #00ff88, #00d4ff);
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #play-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+        }
+
+        #play-btn:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .instructions {
+            margin-top: 2rem;
+            color: #666;
+            text-align: center;
+            line-height: 1.8;
+        }
+
+        .instructions span {
+            color: #00ff88;
+        }
+
+        .instructions .controls-hint {
+            display: block;
+            margin-top: 0.8rem;
+            color: #555;
+            font-size: 0.85rem;
+        }
+
+        /* Game Canvas */
+        #game-canvas {
+            display: block;
+            background: #0a0a1a;
+            touch-action: none;
+        }
+
+        /* HUD */
+        #hud {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            display: none;
+        }
+
+        #score-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+
+        #score-display span {
+            color: #00ff88;
+        }
+
+        /* Leaderboard */
+        #leaderboard {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 20px;
+            border-radius: 10px;
+            z-index: 10;
+            display: none;
+            min-width: 200px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #leaderboard h3 {
+            margin-bottom: 10px;
+            color: #00d4ff;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #leaderboard-list {
+            list-style: none;
+        }
+
+        #leaderboard-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        #leaderboard-list li:last-child {
+            border-bottom: none;
+        }
+
+        #leaderboard-list li.you {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        /* Death Screen */
+        #death-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 50;
+        }
+
+        #death-screen h2 {
+            font-size: 3rem;
+            color: #ff4444;
+            margin-bottom: 1rem;
+            text-align: center;
+            width: 100%;
+            padding: 0 20px;
+        }
+
+        @media (max-width: 480px) {
+            #death-screen h2 {
+                font-size: 2rem;
+            }
+            #death-screen p {
+                font-size: 1.2rem;
+            }
+        }
+
+        #death-screen p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        #death-screen p span {
+            color: #00ff88;
+        }
+
+        #respawn-btn {
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(90deg, #ff4444, #ff8844);
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #respawn-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 68, 68, 0.5);
+        }
+
+        /* Minimap */
+        #minimap {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 150px;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            z-index: 10;
+            display: none;
+        }
+
+        /* Connection Status */
+        #connection-status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            z-index: 10;
+            display: none;
+        }
+
+        #connection-status.connected {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        #connection-status.disconnected {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+        }
+
+        /* Mobile Boost Button */
+        #boost-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.3), rgba(0, 200, 255, 0.2));
+            border: 3px solid rgba(0, 255, 255, 0.6);
+            color: #00ffff;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            z-index: 20;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            transition: all 0.15s;
+        }
+
+        #boost-btn:active, #boost-btn.pressed {
+            transform: translateX(-50%) scale(0.9);
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.6), rgba(0, 200, 255, 0.5));
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
+        }
+
+        #boost-btn.cooldown {
+            border-color: rgba(100, 100, 100, 0.6);
+            color: #666;
+            background: rgba(50, 50, 50, 0.3);
+        }
+
+        #boost-btn.boosting {
+            border-color: #00ffff;
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
+            animation: boostPulse 0.25s ease-out;
+        }
+
+        @keyframes boostPulse {
+            0% { transform: translateX(-50%) scale(1.1); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+
+        /* Mobile-specific adjustments */
+        @media (pointer: coarse) {
+            #boost-btn {
+                display: flex;
+            }
+        }
+
+        /* Also show for narrow screens */
+        @media (max-width: 768px) {
+            #boost-btn {
+                display: flex;
+            }
+
+            #leaderboard {
+                padding: 10px 12px;
+                min-width: 150px;
+                font-size: 0.8rem;
+            }
+
+            #score-display {
+                font-size: 1.5rem;
+            }
+
+            #minimap {
+                width: 100px;
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <h1>ORB ARENA</h1>
+        <p>Consume or be consumed</p>
+        <input type="text" id="name-input" placeholder="Enter your name" maxlength="15" autofocus>
+        <input type="text" id="server-input" placeholder="Server IP (auto-detected)" style="display:none;">
+        <button id="play-btn">Play</button>
+        <div class="instructions">
+            <span>EAT</span> green orbs to grow <span>|</span> <span>HUNT</span> gold orbs for bonus<br>
+            <span>DODGE</span> red spikes &amp; walls <span>|</span> <span>CONSUME</span> smaller players<br>
+            <span class="controls-hint">Move: Mouse or Touch+Drag &bull; Boost: Space or Tap Button</span>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div id="score-display">Score: <span>0</span></div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div id="leaderboard">
+        <h3>Leaderboard</h3>
+        <ol id="leaderboard-list"></ol>
+    </div>
+
+    <!-- Minimap -->
+    <canvas id="minimap"></canvas>
+
+    <!-- Death Screen -->
+    <div id="death-screen">
+        <h2>YOU WERE CONSUMED!</h2>
+        <p>Final Score: <span id="final-score">0</span></p>
+        <button id="respawn-btn">Play Again</button>
+    </div>
+
+    <!-- Connection Status -->
+    <div id="connection-status">Connecting...</div>
+
+    <!-- Mobile Boost Button -->
+    <button id="boost-btn">BOOST</button>
+
+    <script>
+        // Game state
+        const state = {
+            connected: false,
+            playing: false,
+            you: null,
+            players: [],
+            energyOrbs: [],
+            spikeOrbs: [],
+            goldenOrbs: [],
+            walls: [],
+            killFeed: [],
+            world: { width: 2000, height: 2000 },
+            leaderboard: [],
+            camera: { x: 0, y: 0 },
+            lastScore: 0
+        };
+
+        // DOM Elements
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const minimapCanvas = document.getElementById('minimap');
+        const minimapCtx = minimapCanvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const deathScreen = document.getElementById('death-screen');
+        const hud = document.getElementById('hud');
+        const leaderboard = document.getElementById('leaderboard');
+        const minimap = document.getElementById('minimap');
+        const connectionStatus = document.getElementById('connection-status');
+        const nameInput = document.getElementById('name-input');
+        const serverInput = document.getElementById('server-input');
+        const playBtn = document.getElementById('play-btn');
+        const respawnBtn = document.getElementById('respawn-btn');
+        const scoreDisplay = document.getElementById('score-display').querySelector('span');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const finalScore = document.getElementById('final-score');
+        const boostBtn = document.getElementById('boost-btn');
+
+        // WebSocket
+        let ws = null;
+        let mouseX = 0;
+        let mouseY = 0;
+        let isTouchDevice = false;
+
+        // Relative touch control
+        let touchOrigin = null;  // {x, y} - where finger first touched
+        let touchCurrent = null; // {x, y} - where finger is now
+        const TOUCH_SENSITIVITY = 3; // Multiplier for how far the target projects
+
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            // Smaller minimap on mobile
+            const minimapSize = window.innerWidth <= 768 ? 100 : 150;
+            minimapCanvas.width = minimapSize;
+            minimapCanvas.height = minimapSize;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Connect to server
+        function connect(onConnected) {
+            // Use secure WebSocket (wss://) for HTTPS, regular (ws://) for HTTP
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            // Connect through nginx proxy at /ws path
+            const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                state.connected = true;
+                connectionStatus.className = 'connected';
+                connectionStatus.textContent = 'Connected';
+                playBtn.disabled = false;
+                playBtn.textContent = 'PLAY';
+                if (onConnected) onConnected();
+            };
+
+            ws.onclose = () => {
+                state.connected = false;
+                connectionStatus.className = 'disconnected';
+                connectionStatus.textContent = 'Disconnected - Refresh to reconnect';
+                playBtn.disabled = false;
+                playBtn.textContent = 'PLAY';
+            };
+
+            ws.onerror = () => {
+                state.connected = false;
+                connectionStatus.className = 'disconnected';
+                connectionStatus.textContent = 'Connection failed';
+                playBtn.disabled = false;
+                playBtn.textContent = 'PLAY';
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleMessage(data);
+            };
+        }
+
+        // Handle server messages
+        function handleMessage(data) {
+            switch (data.type) {
+                case 'welcome':
+                    state.you = data.player;
+                    state.playing = true;
+                    showGame();
+                    break;
+
+                case 'state':
+                    state.you = data.you;
+                    state.players = data.players;
+                    state.energyOrbs = data.energy_orbs;
+                    state.spikeOrbs = data.spike_orbs || [];
+                    state.goldenOrbs = data.golden_orbs || [];
+                    state.walls = data.walls || [];
+                    state.killFeed = data.kill_feed || [];
+                    state.world = data.world;
+                    state.leaderboard = data.leaderboard;
+
+                    // Check if we died
+                    if (!state.you.alive && state.playing) {
+                        showDeathScreen();
+                    } else if (state.you.alive && deathScreen.style.display === 'flex') {
+                        hideDeathScreen();
+                    }
+                    break;
+            }
+        }
+
+        // Show/hide screens
+        function showGame() {
+            startScreen.style.display = 'none';
+            hud.style.display = 'block';
+            leaderboard.style.display = 'block';
+            minimap.style.display = 'block';
+            connectionStatus.style.display = 'block';
+        }
+
+        function showDeathScreen() {
+            finalScore.textContent = state.lastScore;
+            deathScreen.style.display = 'flex';
+            boostBtn.style.display = 'none';
+        }
+
+        function hideDeathScreen() {
+            deathScreen.style.display = 'none';
+        }
+
+        // Join game
+        function joinGame() {
+            if (!state.connected) {
+                // Connect first, then join when connected
+                playBtn.disabled = true;
+                playBtn.textContent = 'Connecting...';
+                connect(() => {
+                    const name = nameInput.value.trim() || 'Anonymous';
+                    ws.send(JSON.stringify({ type: 'join', name }));
+                });
+            } else {
+                const name = nameInput.value.trim() || 'Anonymous';
+                ws.send(JSON.stringify({ type: 'join', name }));
+            }
+        }
+
+        // Respawn
+        function respawn() {
+            ws.send(JSON.stringify({ type: 'respawn' }));
+            hideDeathScreen();
+        }
+
+        // Send movement
+        function sendMovement() {
+            if (!state.playing || !state.you || !state.you.alive) return;
+
+            let worldX, worldY;
+
+            // Check if using touch controls
+            if (isTouchDevice && touchOrigin && touchCurrent) {
+                // Relative touch: calculate direction from origin to current touch
+                const deltaX = touchCurrent.x - touchOrigin.x;
+                const deltaY = touchCurrent.y - touchOrigin.y;
+
+                // Project from player position in that direction
+                // Multiply by sensitivity for responsive feel
+                worldX = state.you.x + (deltaX * TOUCH_SENSITIVITY);
+                worldY = state.you.y + (deltaY * TOUCH_SENSITIVITY);
+            } else if (isTouchDevice && !touchOrigin) {
+                // Touch released - target current position (stop moving)
+                worldX = state.you.x;
+                worldY = state.you.y;
+            } else {
+                // Mouse/desktop: convert screen coords to world coords
+                worldX = mouseX + state.camera.x;
+                worldY = mouseY + state.camera.y;
+            }
+
+            ws.send(JSON.stringify({
+                type: 'move',
+                x: worldX,
+                y: worldY
+            }));
+        }
+
+        // Event listeners
+        playBtn.addEventListener('click', joinGame);
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') joinGame();
+        });
+        respawnBtn.addEventListener('click', respawn);
+
+        // Mouse events
+        canvas.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        // Double-tap detection for boost
+        let lastTapTime = 0;
+        const DOUBLE_TAP_DELAY = 300; // ms
+
+        // Touch events for mobile support - RELATIVE TOUCH CONTROLS
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isTouchDevice = true;
+            const touch = e.touches[0];
+
+            // Set touch origin - this is our "center point"
+            touchOrigin = { x: touch.clientX, y: touch.clientY };
+            touchCurrent = { x: touch.clientX, y: touch.clientY };
+
+            // Double-tap detection for boost
+            const currentTime = Date.now();
+            if (currentTime - lastTapTime < DOUBLE_TAP_DELAY) {
+                sendBoost();
+                lastTapTime = 0; // Reset to prevent triple-tap
+            } else {
+                lastTapTime = currentTime;
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            touchCurrent = { x: touch.clientX, y: touch.clientY };
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            // Clear touch origin - stop moving
+            touchOrigin = null;
+            touchCurrent = null;
+        }, { passive: false });
+
+        // Keyboard events for boost (desktop)
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && state.playing && state.you && state.you.alive) {
+                e.preventDefault();
+                sendBoost();
+            }
+        });
+
+        // Mobile boost button
+        boostBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            boostBtn.classList.add('pressed');
+            sendBoost();
+        }, { passive: false });
+
+        boostBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            boostBtn.classList.remove('pressed');
+        }, { passive: false });
+
+        // Also support click for testing on desktop
+        boostBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            sendBoost();
+        });
+
+        // Send boost command
+        function sendBoost() {
+            if (!state.connected || !state.you || !state.you.boost_ready) return;
+            ws.send(JSON.stringify({ type: 'boost' }));
+        }
+
+        // Update boost button state
+        function updateBoostButton() {
+            if (!state.you || !state.you.alive) {
+                boostBtn.style.display = 'none';
+                return;
+            }
+
+            // Only show on touch devices or narrow screens
+            if (isTouchDevice || window.innerWidth <= 768) {
+                boostBtn.style.display = 'flex';
+            }
+
+            if (state.you.is_boosting) {
+                boostBtn.classList.add('boosting');
+                boostBtn.classList.remove('cooldown');
+                boostBtn.textContent = 'BOOST!';
+            } else if (state.you.boost_ready) {
+                boostBtn.classList.remove('boosting', 'cooldown');
+                boostBtn.textContent = 'BOOST';
+            } else {
+                boostBtn.classList.remove('boosting');
+                boostBtn.classList.add('cooldown');
+                boostBtn.textContent = 'WAIT';
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            if (!state.playing || !state.you) return;
+
+            // Update camera to follow player
+            state.camera.x = state.you.x - canvas.width / 2;
+            state.camera.y = state.you.y - canvas.height / 2;
+
+            // Update score display
+            if (state.you.alive) {
+                state.lastScore = state.you.score;
+                scoreDisplay.textContent = state.you.score;
+            }
+
+            // Update leaderboard
+            updateLeaderboard();
+
+            // Update mobile boost button
+            updateBoostButton();
+
+            // Send movement at 30fps
+            if (Date.now() % 33 < 17) {
+                sendMovement();
+            }
+        }
+
+        function updateLeaderboard() {
+            leaderboardList.innerHTML = '';
+            state.leaderboard.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${index + 1}. ${entry.name}</span><span>${entry.score}</span>`;
+                if (state.you && entry.name === state.you.name) {
+                    li.className = 'you';
+                }
+                leaderboardList.appendChild(li);
+            });
+        }
+
+        function render() {
+            // Clear canvas
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (!state.playing) return;
+
+            // Draw grid
+            drawGrid();
+
+            // Draw world boundary
+            drawBoundary();
+
+            // Draw walls
+            state.walls.forEach(wall => drawWall(wall));
+
+            // Draw energy orbs
+            state.energyOrbs.forEach(orb => drawEnergyOrb(orb));
+
+            // Draw golden orbs (rare!)
+            state.goldenOrbs.forEach(orb => drawGoldenOrb(orb));
+
+            // Draw spike orbs (dangerous!)
+            state.spikeOrbs.forEach(orb => drawSpikeOrb(orb));
+
+            // Draw players (sorted by size so larger ones appear on top)
+            const sortedPlayers = [...state.players].sort((a, b) => a.radius - b.radius);
+            sortedPlayers.forEach(player => {
+                if (player.alive) {
+                    drawPlayer(player, player.id === state.you.id);
+                }
+            });
+
+            // Draw HUD elements
+            drawKillFeed();
+            drawBoostIndicator();
+            drawTouchIndicator();
+
+            // Draw minimap
+            drawMinimap();
+        }
+
+        function drawTouchIndicator() {
+            // Only show when touch is active
+            if (!touchOrigin || !touchCurrent) return;
+
+            const deltaX = touchCurrent.x - touchOrigin.x;
+            const deltaY = touchCurrent.y - touchOrigin.y;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+            // Outer ring (touch origin)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(touchOrigin.x, touchOrigin.y, 50, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Direction line
+            if (distance > 10) {
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(touchOrigin.x, touchOrigin.y);
+                ctx.lineTo(touchCurrent.x, touchCurrent.y);
+                ctx.stroke();
+
+                // Arrow head
+                const angle = Math.atan2(deltaY, deltaX);
+                const arrowSize = 12;
+                ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
+                ctx.beginPath();
+                ctx.moveTo(touchCurrent.x, touchCurrent.y);
+                ctx.lineTo(
+                    touchCurrent.x - arrowSize * Math.cos(angle - 0.4),
+                    touchCurrent.y - arrowSize * Math.sin(angle - 0.4)
+                );
+                ctx.lineTo(
+                    touchCurrent.x - arrowSize * Math.cos(angle + 0.4),
+                    touchCurrent.y - arrowSize * Math.sin(angle + 0.4)
+                );
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Center dot
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.beginPath();
+            ctx.arc(touchOrigin.x, touchOrigin.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawGrid() {
+            const gridSize = 50;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+            ctx.lineWidth = 1;
+
+            const startX = -state.camera.x % gridSize;
+            const startY = -state.camera.y % gridSize;
+
+            for (let x = startX; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            for (let y = startY; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawBoundary() {
+            const x = -state.camera.x;
+            const y = -state.camera.y;
+
+            ctx.strokeStyle = 'rgba(255, 0, 100, 0.5)';
+            ctx.lineWidth = 5;
+            ctx.strokeRect(x, y, state.world.width, state.world.height);
+
+            // Danger zone gradient at edges
+            const gradient = ctx.createLinearGradient(x, y, x + 100, y);
+            gradient.addColorStop(0, 'rgba(255, 0, 100, 0.2)');
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, 100, state.world.height);
+        }
+
+        function drawEnergyOrb(orb) {
+            const screenX = orb.x - state.camera.x;
+            const screenY = orb.y - state.camera.y;
+
+            // Skip if off screen
+            if (screenX < -50 || screenX > canvas.width + 50 ||
+                screenY < -50 || screenY > canvas.height + 50) return;
+
+            // Glow effect
+            const glow = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, orb.radius * 3);
+            glow.addColorStop(0, orb.color + '40');
+            glow.addColorStop(1, 'transparent');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, orb.radius * 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Main orb
+            ctx.fillStyle = orb.color;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, orb.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Highlight
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.beginPath();
+            ctx.arc(screenX - orb.radius * 0.3, screenY - orb.radius * 0.3, orb.radius * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawSpikeOrb(orb) {
+            const screenX = orb.x - state.camera.x;
+            const screenY = orb.y - state.camera.y;
+
+            // Skip if off screen
+            if (screenX < -50 || screenX > canvas.width + 50 ||
+                screenY < -50 || screenY > canvas.height + 50) return;
+
+            // Menacing glow effect
+            const glow = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, orb.radius * 3);
+            glow.addColorStop(0, 'rgba(255, 0, 50, 0.4)');
+            glow.addColorStop(1, 'transparent');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, orb.radius * 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw spikes
+            const spikeCount = 8;
+            const innerRadius = orb.radius * 0.6;
+            const outerRadius = orb.radius * 1.4;
+
+            ctx.fillStyle = orb.color;
+            ctx.beginPath();
+            for (let i = 0; i < spikeCount * 2; i++) {
+                const angle = (i * Math.PI) / spikeCount;
+                const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                const px = screenX + Math.cos(angle) * radius;
+                const py = screenY + Math.sin(angle) * radius;
+                if (i === 0) {
+                    ctx.moveTo(px, py);
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            // Inner dark core
+            ctx.fillStyle = 'rgba(100, 0, 30, 0.8)';
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, orb.radius * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Warning symbol (skull-ish dot pattern)
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(screenX - 2, screenY - 1, 2, 0, Math.PI * 2);
+            ctx.arc(screenX + 2, screenY - 1, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawGoldenOrb(orb) {
+            const screenX = orb.x - state.camera.x;
+            const screenY = orb.y - state.camera.y;
+
+            // Skip if off screen
+            if (screenX < -50 || screenX > canvas.width + 50 ||
+                screenY < -50 || screenY > canvas.height + 50) return;
+
+            // Golden sparkle glow
+            const glow = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, orb.radius * 4);
+            glow.addColorStop(0, 'rgba(255, 215, 0, 0.6)');
+            glow.addColorStop(0.5, 'rgba(255, 180, 0, 0.3)');
+            glow.addColorStop(1, 'transparent');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, orb.radius * 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Main orb with gradient
+            const orbGrad = ctx.createRadialGradient(screenX - 3, screenY - 3, 0, screenX, screenY, orb.radius);
+            orbGrad.addColorStop(0, '#fff7aa');
+            orbGrad.addColorStop(0.5, '#ffd700');
+            orbGrad.addColorStop(1, '#b8860b');
+            ctx.fillStyle = orbGrad;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, orb.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Sparkle effect
+            ctx.fillStyle = '#fff';
+            const sparkleAngle = Date.now() / 200;
+            for (let i = 0; i < 4; i++) {
+                const angle = sparkleAngle + (i * Math.PI / 2);
+                const sx = screenX + Math.cos(angle) * orb.radius * 0.6;
+                const sy = screenY + Math.sin(angle) * orb.radius * 0.6;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawWall(wall) {
+            const screenX = wall.x - state.camera.x;
+            const screenY = wall.y - state.camera.y;
+
+            // Skip if off screen
+            if (screenX + wall.width < 0 || screenX > canvas.width ||
+                screenY + wall.height < 0 || screenY > canvas.height) return;
+
+            // Wall gradient
+            const wallGrad = ctx.createLinearGradient(screenX, screenY, screenX, screenY + wall.height);
+            wallGrad.addColorStop(0, '#445566');
+            wallGrad.addColorStop(0.5, '#334455');
+            wallGrad.addColorStop(1, '#223344');
+            ctx.fillStyle = wallGrad;
+            ctx.fillRect(screenX, screenY, wall.width, wall.height);
+
+            // Border
+            ctx.strokeStyle = '#556677';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(screenX, screenY, wall.width, wall.height);
+
+            // Highlight
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(screenX, screenY + wall.height);
+            ctx.lineTo(screenX, screenY);
+            ctx.lineTo(screenX + wall.width, screenY);
+            ctx.stroke();
+        }
+
+        function drawKillFeed() {
+            if (!state.killFeed || state.killFeed.length === 0) return;
+
+            ctx.font = 'bold 13px Segoe UI';
+            ctx.textAlign = 'left';
+
+            // Position below score (start at y=100 to avoid HUD overlap)
+            const startY = 100;
+
+            state.killFeed.forEach((kill, index) => {
+                const y = startY + index * 22;
+                const alpha = 0.9 - (index * 0.12);
+
+                // Background for readability
+                const text = `${kill.killer} consumed ${kill.victim}`;
+                const textWidth = ctx.measureText(text).width;
+                ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.5})`;
+                ctx.fillRect(15, y - 14, textWidth + 10, 20);
+
+                // Killer name (white)
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.fillText(kill.killer, 20, y);
+
+                // "consumed" (red)
+                const killerWidth = ctx.measureText(kill.killer).width;
+                ctx.fillStyle = `rgba(255, 100, 100, ${alpha})`;
+                ctx.fillText(' consumed ', 20 + killerWidth, y);
+
+                // Victim name (white)
+                const consumedWidth = ctx.measureText(kill.killer + ' consumed ').width;
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.fillText(kill.victim, 20 + consumedWidth, y);
+            });
+        }
+
+        function drawBoostIndicator() {
+            if (!state.you || !state.you.alive) return;
+
+            // Don't draw canvas indicator on mobile (we have the touch button)
+            if (isTouchDevice || window.innerWidth <= 768) return;
+
+            const x = 20;
+            const y = canvas.height - 60;
+            const width = 100;
+            const height = 10;
+
+            // Background
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(x, y, width, height);
+
+            // Boost bar
+            if (state.you.boost_ready) {
+                ctx.fillStyle = '#00ffff';
+                ctx.fillRect(x, y, width, height);
+            } else {
+                ctx.fillStyle = '#444';
+                ctx.fillRect(x, y, width, height);
+            }
+
+            // Border
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, width, height);
+
+            // Label
+            ctx.fillStyle = state.you.boost_ready ? '#00ffff' : '#666';
+            ctx.font = '12px Segoe UI';
+            ctx.textAlign = 'left';
+            ctx.fillText('BOOST [SPACE]', x, y - 5);
+
+            // Boosting indicator
+            if (state.you.is_boosting) {
+                ctx.fillStyle = '#00ffff';
+                ctx.font = 'bold 14px Segoe UI';
+                ctx.fillText('BOOSTING!', x + width + 10, y + 10);
+            }
+        }
+
+        function drawPlayer(player, isYou) {
+            const screenX = player.x - state.camera.x;
+            const screenY = player.y - state.camera.y;
+
+            // Skip if off screen (with margin for large players)
+            const margin = player.radius * 2;
+            if (screenX < -margin || screenX > canvas.width + margin ||
+                screenY < -margin || screenY > canvas.height + margin) return;
+
+            // Invincibility effect - flashing shield
+            if (player.is_invincible) {
+                const pulse = Math.sin(Date.now() / 100) * 0.3 + 0.7;
+                ctx.strokeStyle = `rgba(100, 200, 255, ${pulse})`;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, player.radius + 15, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Inner shield glow
+                const shieldGlow = ctx.createRadialGradient(screenX, screenY, player.radius, screenX, screenY, player.radius + 20);
+                shieldGlow.addColorStop(0, 'transparent');
+                shieldGlow.addColorStop(0.5, `rgba(100, 200, 255, ${pulse * 0.3})`);
+                shieldGlow.addColorStop(1, 'transparent');
+                ctx.fillStyle = shieldGlow;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, player.radius + 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Boost effect - speed lines
+            if (player.is_boosting) {
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.6)';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 5; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = player.radius + 10 + Math.random() * 20;
+                    ctx.beginPath();
+                    ctx.moveTo(screenX + Math.cos(angle) * player.radius, screenY + Math.sin(angle) * player.radius);
+                    ctx.lineTo(screenX + Math.cos(angle) * dist, screenY + Math.sin(angle) * dist);
+                    ctx.stroke();
+                }
+            }
+
+            // Outer glow
+            const glowColor = player.is_boosting ? 'rgba(0, 255, 255, 0.4)' : player.color + '60';
+            const glow = ctx.createRadialGradient(screenX, screenY, player.radius * 0.5, screenX, screenY, player.radius * 2);
+            glow.addColorStop(0, glowColor);
+            glow.addColorStop(1, 'transparent');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, player.radius * 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Main body
+            const bodyGradient = ctx.createRadialGradient(
+                screenX - player.radius * 0.3,
+                screenY - player.radius * 0.3,
+                0,
+                screenX,
+                screenY,
+                player.radius
+            );
+            bodyGradient.addColorStop(0, lightenColor(player.color, 30));
+            bodyGradient.addColorStop(0.7, player.color);
+            bodyGradient.addColorStop(1, darkenColor(player.color, 30));
+
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Border for "you" indicator
+            if (isYou) {
+                ctx.strokeStyle = player.is_boosting ? '#00ffff' : '#fff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, player.radius + 5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Name tag
+            ctx.fillStyle = player.is_invincible ? '#88ddff' : '#fff';
+            ctx.font = 'bold 14px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(player.name, screenX, screenY - player.radius - 15);
+
+            // Size indicator (mass)
+            ctx.font = '12px Segoe UI';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillText(Math.floor(player.radius), screenX, screenY);
+        }
+
+        function drawMinimap() {
+            const mapSize = minimapCanvas.width;
+            const scale = mapSize / state.world.width;
+
+            // Background
+            minimapCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            minimapCtx.fillRect(0, 0, mapSize, mapSize);
+
+            // Walls
+            minimapCtx.fillStyle = '#445566';
+            state.walls.forEach(wall => {
+                minimapCtx.fillRect(
+                    wall.x * scale,
+                    wall.y * scale,
+                    wall.width * scale,
+                    wall.height * scale
+                );
+            });
+
+            // Energy orbs
+            minimapCtx.fillStyle = '#00ff88';
+            state.energyOrbs.forEach(orb => {
+                minimapCtx.beginPath();
+                minimapCtx.arc(orb.x * scale, orb.y * scale, 1, 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+
+            // Golden orbs (larger, gold colored)
+            minimapCtx.fillStyle = '#ffd700';
+            state.goldenOrbs.forEach(orb => {
+                minimapCtx.beginPath();
+                minimapCtx.arc(orb.x * scale, orb.y * scale, 3, 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+
+            // Spike orbs (red dots on minimap)
+            minimapCtx.fillStyle = '#ff2266';
+            state.spikeOrbs.forEach(orb => {
+                minimapCtx.beginPath();
+                minimapCtx.arc(orb.x * scale, orb.y * scale, 2, 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+
+            // Other players
+            state.players.forEach(player => {
+                if (!player.alive || player.id === state.you.id) return;
+                minimapCtx.fillStyle = player.color;
+                minimapCtx.beginPath();
+                minimapCtx.arc(player.x * scale, player.y * scale, Math.max(2, player.radius * scale), 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+
+            // You
+            if (state.you && state.you.alive) {
+                minimapCtx.fillStyle = '#fff';
+                minimapCtx.beginPath();
+                minimapCtx.arc(state.you.x * scale, state.you.y * scale, 4, 0, Math.PI * 2);
+                minimapCtx.fill();
+
+                // Viewport rectangle
+                minimapCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                minimapCtx.lineWidth = 1;
+                minimapCtx.strokeRect(
+                    state.camera.x * scale,
+                    state.camera.y * scale,
+                    canvas.width * scale,
+                    canvas.height * scale
+                );
+            }
+        }
+
+        // Color utilities
+        function lightenColor(color, amount) {
+            const hex = color.replace('#', '');
+            const r = Math.min(255, parseInt(hex.substr(0, 2), 16) + amount);
+            const g = Math.min(255, parseInt(hex.substr(2, 2), 16) + amount);
+            const b = Math.min(255, parseInt(hex.substr(4, 2), 16) + amount);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function darkenColor(color, amount) {
+            const hex = color.replace('#', '');
+            const r = Math.max(0, parseInt(hex.substr(0, 2), 16) - amount);
+            const g = Math.max(0, parseInt(hex.substr(2, 2), 16) - amount);
+            const b = Math.max(0, parseInt(hex.substr(4, 2), 16) - amount);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        // Start game loop (connection happens when Play is clicked)
+        gameLoop();
+    </script>
+</body>
+</html>
