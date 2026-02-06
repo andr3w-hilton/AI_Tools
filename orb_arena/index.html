@@ -319,7 +319,7 @@
             position: fixed;
             bottom: 30px;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translateX(calc(-50% + 60px));
             width: 80px;
             height: 80px;
             border-radius: 50%;
@@ -342,7 +342,7 @@
         }
 
         #boost-btn:active, #boost-btn.pressed {
-            transform: translateX(-50%) scale(0.9);
+            transform: translateX(calc(-50% + 60px)) scale(0.9);
             background: linear-gradient(135deg, rgba(0, 255, 255, 0.6), rgba(0, 200, 255, 0.5));
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
         }
@@ -360,20 +360,137 @@
         }
 
         @keyframes boostPulse {
-            0% { transform: translateX(-50%) scale(1.1); }
-            100% { transform: translateX(-50%) scale(1); }
+            0% { transform: translateX(calc(-50% + 60px)) scale(1.1); }
+            100% { transform: translateX(calc(-50% + 60px)) scale(1); }
+        }
+
+        /* Mobile Shoot Button */
+        #shoot-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(calc(-50% - 60px));
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255, 100, 50, 0.3), rgba(255, 50, 50, 0.2));
+            border: 3px solid rgba(255, 100, 50, 0.6);
+            color: #ff6632;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            z-index: 20;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            transition: all 0.15s;
+        }
+
+        #shoot-btn:active, #shoot-btn.pressed {
+            transform: translateX(calc(-50% - 60px)) scale(0.9);
+            background: linear-gradient(135deg, rgba(255, 100, 50, 0.6), rgba(255, 50, 50, 0.5));
+            box-shadow: 0 0 30px rgba(255, 100, 50, 0.6);
+        }
+
+        #shoot-btn.cooldown {
+            border-color: rgba(100, 100, 100, 0.6);
+            color: #666;
+            background: rgba(50, 50, 50, 0.3);
+        }
+
+        /* Critical Mass Warning HUD */
+        #critical-mass-hud {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            z-index: 15;
+            display: none;
+            text-align: center;
+            border: 2px solid;
+        }
+
+        /* Power-Up HUD */
+        #powerup-hud {
+            position: fixed;
+            top: 55px;
+            left: 20px;
+            padding: 5px 15px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            z-index: 15;
+            display: none;
+            border: 2px solid;
+        }
+
+        /* Disaster Warning Banner */
+        #disaster-hud {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 30px;
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            z-index: 25;
+            display: none;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            pointer-events: none;
+        }
+
+        #disaster-hud.warning {
+            background: rgba(255, 200, 0, 0.25);
+            border: 2px solid #ffcc00;
+            color: #ffcc00;
+            animation: disasterPulse 0.5s ease-in-out infinite alternate;
+        }
+
+        #disaster-hud.active {
+            background: rgba(255, 50, 50, 0.25);
+            border: 2px solid #ff4444;
+            color: #ff6666;
+        }
+
+        #disaster-hud.active.fog {
+            background: rgba(100, 100, 150, 0.25);
+            border-color: #8888cc;
+            color: #aaaaee;
+        }
+
+        #disaster-hud.active.frenzy {
+            background: rgba(0, 255, 100, 0.25);
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+
+        @keyframes disasterPulse {
+            from { opacity: 0.7; }
+            to { opacity: 1; }
         }
 
         /* Mobile-specific adjustments */
         @media (pointer: coarse) {
-            #boost-btn {
+            #boost-btn, #shoot-btn {
                 display: flex;
             }
         }
 
         /* Also show for narrow screens */
         @media (max-width: 768px) {
-            #boost-btn {
+            #boost-btn, #shoot-btn {
                 display: flex;
             }
 
@@ -405,7 +522,10 @@
         <div class="instructions">
             <span>EAT</span> green orbs to grow <span>|</span> <span>HUNT</span> gold orbs for bonus<br>
             <span>DODGE</span> red spikes &amp; walls <span>|</span> <span>CONSUME</span> smaller players<br>
-            <span class="controls-hint">Move: Mouse or Touch+Drag &bull; Boost: Space or Tap Button</span>
+            <span>SHOOT</span> to attack (costs mass) <span>|</span> <span>WARNING:</span> stay too big and you explode!<br>
+            <span>MYSTERY</span> orbs grant random powers: Shield, Rapid Fire, Magnet, Phantom<br>
+            <span>SURVIVE</span> natural disasters: Black Holes, Meteors, Fog, Earthquakes &amp; more!<br>
+            <span class="controls-hint">Move: Mouse/Touch &bull; Boost: Space &bull; Shoot: Click or Tap Button</span>
         </div>
     </div>
 
@@ -433,11 +553,23 @@
         <button id="respawn-btn">Play Again</button>
     </div>
 
+    <!-- Disaster Warning/Status -->
+    <div id="disaster-hud"></div>
+
+    <!-- Critical Mass Warning -->
+    <div id="critical-mass-hud"></div>
+
+    <!-- Power-Up HUD -->
+    <div id="powerup-hud"></div>
+
     <!-- Connection Status -->
     <div id="connection-status">Connecting...</div>
 
     <!-- Mobile Boost Button -->
     <button id="boost-btn">BOOST</button>
+
+    <!-- Mobile Shoot Button -->
+    <button id="shoot-btn">SHOOT</button>
 
     <script>
         // Game state
@@ -449,12 +581,16 @@
             energyOrbs: [],
             spikeOrbs: [],
             goldenOrbs: [],
+            projectiles: [],
+            powerupOrbs: [],
+            powerupPopup: null,
             walls: [],
             killFeed: [],
             world: { width: 2000, height: 2000 },
             leaderboard: [],
             camera: { x: 0, y: 0 },
-            lastScore: 0
+            lastScore: 0,
+            disaster: { active: null, warning: null }
         };
 
         // DOM Elements
@@ -476,12 +612,18 @@
         const leaderboardList = document.getElementById('leaderboard-list');
         const finalScore = document.getElementById('final-score');
         const boostBtn = document.getElementById('boost-btn');
+        const shootBtn = document.getElementById('shoot-btn');
+        const criticalMassHud = document.getElementById('critical-mass-hud');
+        const powerupHud = document.getElementById('powerup-hud');
+        const disasterHud = document.getElementById('disaster-hud');
 
         // WebSocket
         let ws = null;
         let mouseX = 0;
         let mouseY = 0;
         let isTouchDevice = false;
+        let isMouseDown = false;
+        let isShootBtnHeld = false;
 
         // Relative touch control
         let touchOrigin = null;  // {x, y} - where finger first touched
@@ -545,6 +687,8 @@
             switch (data.type) {
                 case 'welcome':
                     state.you = data.player;
+                    state.walls = data.walls || [];
+                    state.world = data.world || state.world;
                     state.playing = true;
                     showGame();
                     break;
@@ -555,10 +699,17 @@
                     state.energyOrbs = data.energy_orbs;
                     state.spikeOrbs = data.spike_orbs || [];
                     state.goldenOrbs = data.golden_orbs || [];
-                    state.walls = data.walls || [];
+                    state.projectiles = data.projectiles || [];
+                    state.powerupOrbs = data.powerup_orbs || [];
                     state.killFeed = data.kill_feed || [];
-                    state.world = data.world;
+
+                    // Detect power-up pickup
+                    if (data.you.active_powerup && (!state.you || !state.you.active_powerup || state.you.active_powerup !== data.you.active_powerup)) {
+                        const names = { shield: 'SHIELD', rapid_fire: 'RAPID FIRE', magnet: 'MAGNET', phantom: 'PHANTOM' };
+                        state.powerupPopup = { text: names[data.you.active_powerup] || data.you.active_powerup.toUpperCase(), time: Date.now() };
+                    }
                     state.leaderboard = data.leaderboard;
+                    state.disaster = data.disaster || { active: null, warning: null };
 
                     // Check if we died
                     if (!state.you.alive && state.playing) {
@@ -583,6 +734,9 @@
             finalScore.textContent = state.lastScore;
             deathScreen.style.display = 'flex';
             boostBtn.style.display = 'none';
+            shootBtn.style.display = 'none';
+            criticalMassHud.style.display = 'none';
+            powerupHud.style.display = 'none';
         }
 
         function hideDeathScreen() {
@@ -657,6 +811,13 @@
             mouseY = e.clientY;
         });
 
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 0) isMouseDown = true;
+        });
+        canvas.addEventListener('mouseup', (e) => {
+            if (e.button === 0) isMouseDown = false;
+        });
+
         // Double-tap detection for boost
         let lastTapTime = 0;
         const DOUBLE_TAP_DELAY = 300; // ms
@@ -722,6 +883,51 @@
             sendBoost();
         });
 
+        // Click to shoot (desktop)
+        canvas.addEventListener('click', (e) => {
+            if (!state.playing || !state.you || !state.you.alive) return;
+            if (isTouchDevice) return; // mobile uses button
+            const worldX = e.clientX + state.camera.x;
+            const worldY = e.clientY + state.camera.y;
+            sendShoot(worldX, worldY);
+        });
+
+        // Mobile shoot button
+        shootBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            shootBtn.classList.add('pressed');
+            isShootBtnHeld = true;
+            if (state.you && state.you.alive) {
+                // Shoot toward current movement target
+                sendShoot(state.you.x + (touchCurrent ? (touchCurrent.x - (touchOrigin ? touchOrigin.x : 0)) * TOUCH_SENSITIVITY : 0),
+                          state.you.y + (touchCurrent ? (touchCurrent.y - (touchOrigin ? touchOrigin.y : 0)) * TOUCH_SENSITIVITY : 0));
+            }
+        }, { passive: false });
+
+        shootBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            shootBtn.classList.remove('pressed');
+            isShootBtnHeld = false;
+        }, { passive: false });
+
+        shootBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (state.you && state.you.alive) {
+                const worldX = mouseX + state.camera.x;
+                const worldY = mouseY + state.camera.y;
+                sendShoot(worldX, worldY);
+            }
+        });
+
+        // Send shoot command
+        function sendShoot(targetX, targetY) {
+            if (!state.connected || !state.you) return;
+            if (!state.you.shoot_ready && state.you.active_powerup !== 'rapid_fire') return;
+            ws.send(JSON.stringify({ type: 'shoot', x: targetX, y: targetY }));
+        }
+
         // Send boost command
         function sendBoost() {
             if (!state.connected || !state.you || !state.you.boost_ready) return;
@@ -754,6 +960,338 @@
             }
         }
 
+        // Update shoot button state (mobile)
+        function updateShootButton() {
+            if (!state.you || !state.you.alive) {
+                shootBtn.style.display = 'none';
+                return;
+            }
+            if (isTouchDevice || window.innerWidth <= 768) {
+                shootBtn.style.display = 'flex';
+            }
+            if (state.you.radius < 25) {
+                shootBtn.classList.add('cooldown');
+                shootBtn.textContent = 'GROW';
+            } else if (state.you.shoot_ready) {
+                shootBtn.classList.remove('cooldown');
+                shootBtn.textContent = 'SHOOT';
+            } else {
+                shootBtn.classList.add('cooldown');
+                shootBtn.textContent = 'WAIT';
+            }
+        }
+
+        // Update critical mass HUD
+        function updateCriticalMassHud() {
+            if (!state.you || !state.you.alive || !state.you.critical_mass_active) {
+                criticalMassHud.style.display = 'none';
+                return;
+            }
+            const remaining = state.you.critical_mass_remaining;
+            criticalMassHud.style.display = 'block';
+            criticalMassHud.textContent = `CRITICAL MASS: ${Math.ceil(remaining)}s`;
+
+            if (remaining > 20) {
+                criticalMassHud.style.background = 'rgba(0, 180, 0, 0.3)';
+                criticalMassHud.style.borderColor = '#00ff88';
+                criticalMassHud.style.color = '#00ff88';
+            } else if (remaining > 10) {
+                criticalMassHud.style.background = 'rgba(200, 180, 0, 0.3)';
+                criticalMassHud.style.borderColor = '#ffcc00';
+                criticalMassHud.style.color = '#ffcc00';
+            } else {
+                criticalMassHud.style.background = 'rgba(200, 0, 0, 0.4)';
+                criticalMassHud.style.borderColor = '#ff4444';
+                criticalMassHud.style.color = '#ff4444';
+            }
+        }
+
+        // Power-up HUD colors
+        const POWERUP_COLORS = {
+            shield: { bg: 'rgba(200, 180, 0, 0.3)', border: '#ffd700', text: '#ffd700', name: 'SHIELD' },
+            rapid_fire: { bg: 'rgba(200, 80, 0, 0.3)', border: '#ff6632', text: '#ff6632', name: 'RAPID FIRE' },
+            magnet: { bg: 'rgba(0, 150, 50, 0.3)', border: '#00ff88', text: '#00ff88', name: 'MAGNET' },
+            phantom: { bg: 'rgba(0, 150, 200, 0.3)', border: '#00d4ff', text: '#00d4ff', name: 'PHANTOM' }
+        };
+
+        function updatePowerUpHud() {
+            if (!state.you || !state.you.alive || !state.you.active_powerup) {
+                powerupHud.style.display = 'none';
+                return;
+            }
+            const pu = POWERUP_COLORS[state.you.active_powerup];
+            if (!pu) { powerupHud.style.display = 'none'; return; }
+
+            powerupHud.style.display = 'block';
+            powerupHud.style.background = pu.bg;
+            powerupHud.style.borderColor = pu.border;
+            powerupHud.style.color = pu.text;
+            powerupHud.textContent = `${pu.name}: ${Math.ceil(state.you.powerup_remaining)}s`;
+        }
+
+        // Disaster names for display
+        const DISASTER_NAMES = {
+            black_hole: 'BLACK HOLE',
+            meteor_shower: 'METEOR SHOWER',
+            fog_of_war: 'FOG OF WAR',
+            feeding_frenzy: 'FEEDING FRENZY',
+            supernova: 'SUPERNOVA',
+            earthquake: 'EARTHQUAKE'
+        };
+
+        function updateDisasterHud() {
+            const d = state.disaster;
+            if (!d) { disasterHud.style.display = 'none'; return; }
+
+            if (d.warning) {
+                disasterHud.style.display = 'block';
+                disasterHud.className = 'warning';
+                const name = DISASTER_NAMES[d.warning] || d.warning;
+                disasterHud.textContent = `WARNING: ${name} INCOMING (${Math.ceil(d.warning_remaining)}s)`;
+            } else if (d.active) {
+                disasterHud.style.display = 'block';
+                const name = DISASTER_NAMES[d.active] || d.active;
+                let extraClass = '';
+                if (d.active === 'fog_of_war') extraClass = ' fog';
+                else if (d.active === 'feeding_frenzy') extraClass = ' frenzy';
+                disasterHud.className = 'active' + extraClass;
+                const remaining = d.remaining != null ? ` (${Math.ceil(d.remaining)}s)` : '';
+                disasterHud.textContent = `${name}${remaining}`;
+            } else {
+                disasterHud.style.display = 'none';
+            }
+        }
+
+        // ── Disaster rendering functions ──
+
+        function drawBlackHole(bh, progress) {
+            const screenX = bh.x - state.camera.x;
+            const screenY = bh.y - state.camera.y;
+
+            // Skip if way off screen
+            if (screenX < -600 || screenX > canvas.width + 600 ||
+                screenY < -600 || screenY > canvas.height + 600) return;
+
+            const r = bh.radius;
+            const t = Date.now() / 1000;
+
+            // Accretion disk (outer swirl)
+            const pullRange = 500 * progress;
+            const diskGrad = ctx.createRadialGradient(screenX, screenY, r, screenX, screenY, pullRange);
+            diskGrad.addColorStop(0, 'rgba(80, 0, 120, 0.4)');
+            diskGrad.addColorStop(0.3, 'rgba(40, 0, 80, 0.2)');
+            diskGrad.addColorStop(0.6, 'rgba(20, 0, 50, 0.1)');
+            diskGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = diskGrad;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, pullRange, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Swirling rings
+            for (let i = 0; i < 3; i++) {
+                const ringR = r * (1.5 + i * 0.8);
+                const alpha = 0.3 - i * 0.08;
+                ctx.strokeStyle = `rgba(150, 50, 255, ${alpha})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.ellipse(screenX, screenY, ringR, ringR * 0.4,
+                    t * (1 + i * 0.3) + i, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Event horizon (black center)
+            const coreGrad = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, r);
+            coreGrad.addColorStop(0, 'rgba(0, 0, 0, 1)');
+            coreGrad.addColorStop(0.7, 'rgba(0, 0, 0, 0.95)');
+            coreGrad.addColorStop(1, 'rgba(30, 0, 60, 0.8)');
+            ctx.fillStyle = coreGrad;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bright accretion ring at edge
+            ctx.strokeStyle = `rgba(200, 100, 255, ${0.5 + Math.sin(t * 5) * 0.2})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, r + 2, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Gravitational lensing - distortion dots
+            for (let i = 0; i < 8; i++) {
+                const angle = t * 2 + i * Math.PI / 4;
+                const dist = r + 8 + Math.sin(t * 3 + i) * 5;
+                const dx = Math.cos(angle) * dist;
+                const dy = Math.sin(angle) * dist;
+                ctx.fillStyle = `rgba(200, 150, 255, ${0.6 + Math.sin(t * 4 + i) * 0.3})`;
+                ctx.beginPath();
+                ctx.arc(screenX + dx, screenY + dy, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawMeteorImpact(meteor) {
+            const screenX = meteor.x - state.camera.x;
+            const screenY = meteor.y - state.camera.y;
+
+            if (screenX < -100 || screenX > canvas.width + 100 ||
+                screenY < -100 || screenY > canvas.height + 100) return;
+
+            const r = meteor.radius;
+
+            // Impact flash
+            const flashGrad = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, r * 2);
+            flashGrad.addColorStop(0, 'rgba(255, 200, 50, 0.8)');
+            flashGrad.addColorStop(0.3, 'rgba(255, 100, 0, 0.5)');
+            flashGrad.addColorStop(0.6, 'rgba(255, 50, 0, 0.2)');
+            flashGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = flashGrad;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, r * 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Crater ring
+            ctx.strokeStyle = 'rgba(255, 150, 50, 0.6)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, r, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Center bright spot
+            ctx.fillStyle = 'rgba(255, 255, 200, 0.9)';
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawFogOfWar(fogRadius) {
+            if (!state.you || !state.you.alive) return;
+
+            const screenX = state.you.x - state.camera.x;
+            const screenY = state.you.y - state.camera.y;
+
+            // Create fog overlay using compositing
+            ctx.save();
+
+            // Draw a dark overlay over everything
+            ctx.globalCompositeOperation = 'source-over';
+
+            // Create a temporary canvas for the fog mask
+            const fogGrad = ctx.createRadialGradient(screenX, screenY, fogRadius * 0.6, screenX, screenY, fogRadius);
+            fogGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            fogGrad.addColorStop(0.8, 'rgba(0, 0, 0, 0)');
+            fogGrad.addColorStop(1, 'rgba(5, 5, 20, 0.95)');
+
+            // Full screen dark overlay with circular cutout via gradient
+            ctx.fillStyle = 'rgba(5, 5, 20, 0.95)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Cut out the visibility area
+            ctx.globalCompositeOperation = 'destination-out';
+            const clearGrad = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, fogRadius);
+            clearGrad.addColorStop(0, 'rgba(0, 0, 0, 1)');
+            clearGrad.addColorStop(0.7, 'rgba(0, 0, 0, 1)');
+            clearGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = clearGrad;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, fogRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+
+            // Fog particles at edge
+            ctx.globalCompositeOperation = 'source-over';
+            const t = Date.now() / 1000;
+            for (let i = 0; i < 12; i++) {
+                const angle = t * 0.3 + i * Math.PI / 6;
+                const dist = fogRadius - 20 + Math.sin(t + i) * 30;
+                const px = screenX + Math.cos(angle) * dist;
+                const py = screenY + Math.sin(angle) * dist;
+                const alpha = 0.15 + Math.sin(t * 2 + i) * 0.1;
+                ctx.fillStyle = `rgba(100, 100, 150, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(px, py, 15 + Math.sin(t + i * 2) * 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawSupernova(nova) {
+            const screenX = nova.x - state.camera.x;
+            const screenY = nova.y - state.camera.y;
+            const elapsed = nova.time; // seconds since trigger
+
+            if (elapsed > 3) return;
+
+            // Expanding shockwave
+            const waveRadius = nova.radius * Math.min(1, elapsed / 1.5);
+            const alpha = Math.max(0, 1 - elapsed / 3);
+
+            // Bright flash at start
+            if (elapsed < 0.5) {
+                const flashAlpha = 1 - elapsed / 0.5;
+                ctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha * 0.3})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Expanding ring
+            ctx.strokeStyle = `rgba(255, 200, 100, ${alpha * 0.8})`;
+            ctx.lineWidth = 8 - elapsed * 2;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, waveRadius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Inner glow
+            if (elapsed < 1.5) {
+                const glowR = waveRadius * 0.8;
+                const glowGrad = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, glowR);
+                glowGrad.addColorStop(0, `rgba(255, 255, 200, ${alpha * 0.5})`);
+                glowGrad.addColorStop(0.4, `rgba(255, 150, 50, ${alpha * 0.3})`);
+                glowGrad.addColorStop(1, 'transparent');
+                ctx.fillStyle = glowGrad;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, glowR, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Debris particles
+            const t = Date.now() / 1000;
+            for (let i = 0; i < 20; i++) {
+                const angle = i * Math.PI / 10 + elapsed * 0.5;
+                const dist = waveRadius * (0.3 + (i % 3) * 0.25);
+                const px = screenX + Math.cos(angle) * dist;
+                const py = screenY + Math.sin(angle) * dist;
+                ctx.fillStyle = `rgba(255, ${150 + i * 5}, 50, ${alpha * 0.6})`;
+                ctx.beginPath();
+                ctx.arc(px, py, 3 - elapsed * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawEarthquakeShake(progress) {
+            // Screen shake effect — applied as a canvas transform
+            if (progress > 0 && progress < 1) {
+                const intensity = Math.sin(progress * Math.PI) * 8; // strongest in middle
+                const shakeX = (Math.random() - 0.5) * intensity;
+                const shakeY = (Math.random() - 0.5) * intensity;
+                ctx.translate(shakeX, shakeY);
+            }
+        }
+
+        function drawFrenzyOverlay(progress) {
+            // Subtle green pulsing border to indicate frenzy
+            const pulse = Math.sin(Date.now() / 200) * 0.15 + 0.2;
+            const thickness = 4;
+
+            ctx.fillStyle = `rgba(0, 255, 100, ${pulse})`;
+            // Top
+            ctx.fillRect(0, 0, canvas.width, thickness);
+            // Bottom
+            ctx.fillRect(0, canvas.height - thickness, canvas.width, thickness);
+            // Left
+            ctx.fillRect(0, 0, thickness, canvas.height);
+            // Right
+            ctx.fillRect(canvas.width - thickness, 0, thickness, canvas.height);
+        }
+
         // Game loop
         function gameLoop() {
             update();
@@ -780,6 +1318,30 @@
             // Update mobile boost button
             updateBoostButton();
 
+            // Update mobile shoot button
+            updateShootButton();
+
+            // Update critical mass warning
+            updateCriticalMassHud();
+
+            // Update power-up HUD
+            updatePowerUpHud();
+
+            // Update disaster HUD
+            updateDisasterHud();
+
+            // Rapid fire auto-shoot while holding mouse/button
+            if (state.you.active_powerup === 'rapid_fire') {
+                if (isMouseDown && !isTouchDevice) {
+                    const worldX = mouseX + state.camera.x;
+                    const worldY = mouseY + state.camera.y;
+                    sendShoot(worldX, worldY);
+                } else if (isShootBtnHeld && state.you.alive) {
+                    sendShoot(state.you.x + (touchCurrent ? (touchCurrent.x - (touchOrigin ? touchOrigin.x : 0)) * TOUCH_SENSITIVITY : 0),
+                              state.you.y + (touchCurrent ? (touchCurrent.y - (touchOrigin ? touchOrigin.y : 0)) * TOUCH_SENSITIVITY : 0));
+                }
+            }
+
             // Send movement at 30fps
             if (Date.now() % 33 < 17) {
                 sendMovement();
@@ -790,7 +1352,12 @@
             leaderboardList.innerHTML = '';
             state.leaderboard.forEach((entry, index) => {
                 const li = document.createElement('li');
-                li.innerHTML = `<span>${index + 1}. ${entry.name}</span><span>${entry.score}</span>`;
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = `${index + 1}. ${entry.name}`;
+                const scoreSpan = document.createElement('span');
+                scoreSpan.textContent = entry.score;
+                li.appendChild(nameSpan);
+                li.appendChild(scoreSpan);
                 if (state.you && entry.name === state.you.name) {
                     li.className = 'you';
                 }
@@ -804,6 +1371,13 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             if (!state.playing) return;
+
+            // Earthquake screen shake (save/restore wraps everything)
+            const hasEarthquake = state.disaster && state.disaster.active === 'earthquake';
+            if (hasEarthquake) {
+                ctx.save();
+                drawEarthquakeShake(state.disaster.earthquake_progress || 0);
+            }
 
             // Draw grid
             drawGrid();
@@ -820,8 +1394,27 @@
             // Draw golden orbs (rare!)
             state.goldenOrbs.forEach(orb => drawGoldenOrb(orb));
 
+            // Draw power-up orbs (mystery!)
+            state.powerupOrbs.forEach(orb => drawPowerUpOrb(orb));
+
             // Draw spike orbs (dangerous!)
             state.spikeOrbs.forEach(orb => drawSpikeOrb(orb));
+
+            // Draw projectiles
+            state.projectiles.forEach(proj => drawProjectile(proj));
+
+            // Draw black hole and meteor impacts (world-space disasters)
+            if (state.disaster) {
+                if (state.disaster.active === 'black_hole' && state.disaster.black_hole) {
+                    drawBlackHole(state.disaster.black_hole, state.disaster.progress || 0);
+                }
+                if (state.disaster.active === 'meteor_shower' && state.disaster.meteors) {
+                    state.disaster.meteors.forEach(m => drawMeteorImpact(m));
+                }
+                if (state.disaster.active === 'supernova' && state.disaster.supernova) {
+                    drawSupernova(state.disaster.supernova);
+                }
+            }
 
             // Draw players (sorted by size so larger ones appear on top)
             const sortedPlayers = [...state.players].sort((a, b) => a.radius - b.radius);
@@ -831,13 +1424,40 @@
                 }
             });
 
+            // Draw fog of war (over everything except HUD)
+            if (state.disaster && state.disaster.active === 'fog_of_war') {
+                drawFogOfWar(state.disaster.fog_radius || 300);
+            }
+
+            // Feeding frenzy border overlay
+            if (state.disaster && state.disaster.active === 'feeding_frenzy') {
+                drawFrenzyOverlay(state.disaster.progress || 0);
+            }
+
+            // Restore earthquake transform before HUD
+            if (hasEarthquake) {
+                ctx.restore();
+            }
+
             // Draw HUD elements
             drawKillFeed();
             drawBoostIndicator();
             drawTouchIndicator();
+            drawPowerUpPopup();
 
-            // Draw minimap
-            drawMinimap();
+            // Draw minimap (hide during fog of war)
+            if (state.disaster && state.disaster.active === 'fog_of_war') {
+                // Dark minimap during fog
+                minimapCtx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+                minimapCtx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+                minimapCtx.fillStyle = 'rgba(100, 100, 150, 0.5)';
+                minimapCtx.font = 'bold 12px Segoe UI';
+                minimapCtx.textAlign = 'center';
+                minimapCtx.textBaseline = 'middle';
+                minimapCtx.fillText('FOG', minimapCanvas.width / 2, minimapCanvas.height / 2);
+            } else {
+                drawMinimap();
+            }
         }
 
         function drawTouchIndicator() {
@@ -1051,6 +1671,87 @@
             }
         }
 
+        function drawPowerUpOrb(orb) {
+            const screenX = orb.x - state.camera.x;
+            const screenY = orb.y - state.camera.y;
+
+            // Skip if off screen
+            if (screenX < -60 || screenX > canvas.width + 60 ||
+                screenY < -60 || screenY > canvas.height + 60) return;
+
+            const t = Date.now() / 1000;
+
+            // Rainbow pulsing glow (cycles hue over time)
+            const hue = (t * 60) % 360;
+            const glowColor = `hsla(${hue}, 100%, 70%, 0.5)`;
+            const glowColor2 = `hsla(${(hue + 120) % 360}, 100%, 60%, 0.3)`;
+
+            // Outer glow
+            const glow = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, orb.radius * 4);
+            glow.addColorStop(0, glowColor);
+            glow.addColorStop(0.5, glowColor2);
+            glow.addColorStop(1, 'transparent');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, orb.radius * 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Main orb body - white/prismatic
+            const orbGrad = ctx.createRadialGradient(screenX - 3, screenY - 3, 0, screenX, screenY, orb.radius);
+            orbGrad.addColorStop(0, '#ffffff');
+            orbGrad.addColorStop(0.5, `hsla(${hue}, 80%, 80%, 1)`);
+            orbGrad.addColorStop(1, `hsla(${(hue + 180) % 360}, 70%, 50%, 1)`);
+            ctx.fillStyle = orbGrad;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, orb.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pulsing ring
+            const pulse = Math.sin(t * 4) * 0.3 + 0.7;
+            ctx.strokeStyle = `hsla(${hue}, 100%, 80%, ${pulse})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, orb.radius + 4 + Math.sin(t * 3) * 2, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // "?" symbol in center
+            ctx.fillStyle = '#fff';
+            ctx.font = `bold ${orb.radius * 1.2}px Segoe UI`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('?', screenX, screenY + 1);
+        }
+
+        function drawProjectile(proj) {
+            const screenX = proj.x - state.camera.x;
+            const screenY = proj.y - state.camera.y;
+
+            // Skip if off screen
+            if (screenX < -30 || screenX > canvas.width + 30 ||
+                screenY < -30 || screenY > canvas.height + 30) return;
+
+            // Glow trail
+            const glow = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, proj.radius * 3);
+            glow.addColorStop(0, proj.color + '80');
+            glow.addColorStop(1, 'transparent');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, proj.radius * 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Main projectile
+            ctx.fillStyle = proj.color;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, proj.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bright core
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, proj.radius * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
         function drawWall(wall) {
             const screenX = wall.x - state.camera.x;
             const screenY = wall.y - state.camera.y;
@@ -1095,25 +1796,34 @@
                 const y = startY + index * 22;
                 const alpha = 0.9 - (index * 0.12);
 
-                // Background for readability
-                const text = `${kill.killer} consumed ${kill.victim}`;
-                const textWidth = ctx.measureText(text).width;
-                ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.5})`;
-                ctx.fillRect(15, y - 14, textWidth + 10, 20);
+                const isExplosion = kill.victim.includes('(exploded)');
 
-                // Killer name (white)
-                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-                ctx.fillText(kill.killer, 20, y);
+                if (isExplosion) {
+                    // Explosion message
+                    const text = `${kill.killer} EXPLODED!`;
+                    const textWidth = ctx.measureText(text).width;
+                    ctx.fillStyle = `rgba(80, 0, 0, ${alpha * 0.6})`;
+                    ctx.fillRect(15, y - 14, textWidth + 10, 20);
+                    ctx.fillStyle = `rgba(255, 150, 50, ${alpha})`;
+                    ctx.fillText(text, 20, y);
+                } else {
+                    // Normal kill message
+                    const text = `${kill.killer} consumed ${kill.victim}`;
+                    const textWidth = ctx.measureText(text).width;
+                    ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.5})`;
+                    ctx.fillRect(15, y - 14, textWidth + 10, 20);
 
-                // "consumed" (red)
-                const killerWidth = ctx.measureText(kill.killer).width;
-                ctx.fillStyle = `rgba(255, 100, 100, ${alpha})`;
-                ctx.fillText(' consumed ', 20 + killerWidth, y);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                    ctx.fillText(kill.killer, 20, y);
 
-                // Victim name (white)
-                const consumedWidth = ctx.measureText(kill.killer + ' consumed ').width;
-                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-                ctx.fillText(kill.victim, 20 + consumedWidth, y);
+                    const killerWidth = ctx.measureText(kill.killer).width;
+                    ctx.fillStyle = `rgba(255, 100, 100, ${alpha})`;
+                    ctx.fillText(' consumed ', 20 + killerWidth, y);
+
+                    const consumedWidth = ctx.measureText(kill.killer + ' consumed ').width;
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                    ctx.fillText(kill.victim, 20 + consumedWidth, y);
+                }
             });
         }
 
@@ -1158,6 +1868,60 @@
                 ctx.font = 'bold 14px Segoe UI';
                 ctx.fillText('BOOSTING!', x + width + 10, y + 10);
             }
+
+            // Shoot indicator
+            const sy = y - 30;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(x, sy, width, height);
+
+            if (state.you.shoot_ready && state.you.radius >= 25) {
+                ctx.fillStyle = '#ff6632';
+                ctx.fillRect(x, sy, width, height);
+            } else {
+                ctx.fillStyle = '#444';
+                ctx.fillRect(x, sy, width, height);
+            }
+
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, sy, width, height);
+
+            ctx.font = '12px Segoe UI';
+            ctx.textAlign = 'left';
+            if (state.you.radius < 25) {
+                ctx.fillStyle = '#666';
+                ctx.fillText('GROW', x, sy - 5);
+            } else if (state.you.shoot_ready) {
+                ctx.fillStyle = '#ff6632';
+                ctx.fillText('SHOOT [CLICK]', x, sy - 5);
+            } else {
+                ctx.fillStyle = '#666';
+                ctx.fillText('SHOOT [CLICK]', x, sy - 5);
+            }
+        }
+
+        function drawPowerUpPopup() {
+            if (!state.powerupPopup || !state.you || !state.you.alive) return;
+            const elapsed = Date.now() - state.powerupPopup.time;
+            if (elapsed > 2000) { state.powerupPopup = null; return; }
+
+            const alpha = Math.max(0, 1 - elapsed / 2000);
+            const rise = elapsed * 0.03;
+            const screenX = state.you.x - state.camera.x;
+            const screenY = state.you.y - state.camera.y - state.you.radius - 40 - rise;
+
+            const pu = POWERUP_COLORS[state.you.active_powerup];
+            const color = pu ? pu.text : '#fff';
+
+            ctx.font = 'bold 22px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = color.replace(')', `, ${alpha})`).replace('rgb', 'rgba').replace('rgbaa', 'rgba');
+            // Simple approach: draw with global alpha
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = color;
+            ctx.fillText(state.powerupPopup.text + '!', screenX, screenY);
+            ctx.globalAlpha = 1;
         }
 
         function drawPlayer(player, isYou) {
@@ -1187,6 +1951,85 @@
                 ctx.beginPath();
                 ctx.arc(screenX, screenY, player.radius + 20, 0, Math.PI * 2);
                 ctx.fill();
+            }
+
+            // Critical mass warning effect
+            if (player.critical_mass_active) {
+                const remaining = player.critical_mass_remaining;
+                // Pulse faster as time runs out
+                const pulseSpeed = remaining < 5 ? 50 : remaining < 10 ? 80 : 150;
+                const pulse = Math.sin(Date.now() / pulseSpeed) * 0.4 + 0.6;
+
+                // Warning color: green > yellow > red
+                let warningColor;
+                if (remaining > 20) {
+                    warningColor = `rgba(0, 255, 100, ${pulse * 0.6})`;
+                } else if (remaining > 10) {
+                    warningColor = `rgba(255, 200, 0, ${pulse * 0.7})`;
+                } else {
+                    warningColor = `rgba(255, 50, 50, ${pulse * 0.9})`;
+                }
+
+                ctx.strokeStyle = warningColor;
+                ctx.lineWidth = remaining < 5 ? 5 : 3;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, player.radius + 20, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Countdown text below name
+                ctx.fillStyle = warningColor;
+                ctx.font = 'bold 16px Segoe UI';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${Math.ceil(remaining)}s`, screenX, screenY + player.radius + 25);
+            }
+
+            // Power-up visual effects
+            if (player.active_powerup === 'shield') {
+                // Golden pulsing shield ring
+                const shieldPulse = Math.sin(Date.now() / 150) * 0.3 + 0.7;
+                ctx.strokeStyle = `rgba(255, 215, 0, ${shieldPulse})`;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, player.radius + 12, 0, Math.PI * 2);
+                ctx.stroke();
+                // Inner golden glow
+                const shieldGlow = ctx.createRadialGradient(screenX, screenY, player.radius, screenX, screenY, player.radius + 18);
+                shieldGlow.addColorStop(0, 'transparent');
+                shieldGlow.addColorStop(0.5, `rgba(255, 215, 0, ${shieldPulse * 0.25})`);
+                shieldGlow.addColorStop(1, 'transparent');
+                ctx.fillStyle = shieldGlow;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, player.radius + 18, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (player.active_powerup === 'rapid_fire') {
+                // Red/orange spark particles
+                for (let i = 0; i < 6; i++) {
+                    const angle = (Date.now() / 100 + i * Math.PI / 3) % (Math.PI * 2);
+                    const dist = player.radius + 8 + Math.sin(Date.now() / 80 + i) * 6;
+                    const sx = screenX + Math.cos(angle) * dist;
+                    const sy = screenY + Math.sin(angle) * dist;
+                    ctx.fillStyle = i % 2 === 0 ? 'rgba(255, 100, 50, 0.8)' : 'rgba(255, 200, 50, 0.7)';
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else if (player.active_powerup === 'magnet') {
+                // Green energy lines radiating inward
+                for (let i = 0; i < 8; i++) {
+                    const angle = (Date.now() / 200 + i * Math.PI / 4) % (Math.PI * 2);
+                    const outerDist = player.radius + 25;
+                    const innerDist = player.radius + 5;
+                    const alpha = (Math.sin(Date.now() / 100 + i) * 0.3 + 0.5);
+                    ctx.strokeStyle = `rgba(0, 255, 136, ${alpha})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(screenX + Math.cos(angle) * outerDist, screenY + Math.sin(angle) * outerDist);
+                    ctx.lineTo(screenX + Math.cos(angle) * innerDist, screenY + Math.sin(angle) * innerDist);
+                    ctx.stroke();
+                }
+            } else if (player.active_powerup === 'phantom') {
+                // Semi-transparent effect - reduce opacity for entire player
+                ctx.globalAlpha = 0.4;
             }
 
             // Boost effect - speed lines
@@ -1251,6 +2094,11 @@
             ctx.font = '12px Segoe UI';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
             ctx.fillText(Math.floor(player.radius), screenX, screenY);
+
+            // Reset opacity if phantom
+            if (player.active_powerup === 'phantom') {
+                ctx.globalAlpha = 1;
+            }
         }
 
         function drawMinimap() {
@@ -1293,6 +2141,23 @@
             state.spikeOrbs.forEach(orb => {
                 minimapCtx.beginPath();
                 minimapCtx.arc(orb.x * scale, orb.y * scale, 2, 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+
+            // Power-up orbs (white/rainbow pulsing)
+            const puHue = (Date.now() / 10) % 360;
+            minimapCtx.fillStyle = `hsl(${puHue}, 100%, 80%)`;
+            state.powerupOrbs.forEach(orb => {
+                minimapCtx.beginPath();
+                minimapCtx.arc(orb.x * scale, orb.y * scale, 3, 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+
+            // Projectiles
+            state.projectiles.forEach(proj => {
+                minimapCtx.fillStyle = proj.color;
+                minimapCtx.beginPath();
+                minimapCtx.arc(proj.x * scale, proj.y * scale, 1.5, 0, Math.PI * 2);
                 minimapCtx.fill();
             });
 
