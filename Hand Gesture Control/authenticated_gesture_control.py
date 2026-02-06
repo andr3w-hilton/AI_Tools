@@ -108,8 +108,9 @@ class AuthenticatedGestureController:
         self.control_zone_y_max = 0.7
 
         # Smoothing parameters
-        self.smooth_factor = 5
+        self.smooth_factor = 8  # Higher = smoother but more lag
         self.prev_x, self.prev_y = 0, 0
+        self.dead_zone = 3  # Ignore movements smaller than this (pixels)
 
         # Click detection
         self.is_hand_closed = False
@@ -351,9 +352,21 @@ class AuthenticatedGestureController:
         return avg_distance < threshold
 
     def smooth_coordinates(self, x, y):
-        """Apply smoothing to mouse coordinates"""
-        smooth_x = int(self.prev_x + (x - self.prev_x) / self.smooth_factor)
-        smooth_y = int(self.prev_y + (y - self.prev_y) / self.smooth_factor)
+        """Apply smoothing to mouse coordinates with dead zone filtering"""
+        # Calculate the difference from previous position
+        delta_x = x - self.prev_x
+        delta_y = y - self.prev_y
+
+        # Apply dead zone - ignore tiny movements to reduce jitter
+        if abs(delta_x) < self.dead_zone:
+            delta_x = 0
+        if abs(delta_y) < self.dead_zone:
+            delta_y = 0
+
+        # Apply exponential smoothing
+        smooth_x = int(self.prev_x + delta_x / self.smooth_factor)
+        smooth_y = int(self.prev_y + delta_y / self.smooth_factor)
+
         self.prev_x = smooth_x
         self.prev_y = smooth_y
         return smooth_x, smooth_y
