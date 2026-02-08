@@ -28,19 +28,19 @@ import os
 import re
 
 # Game configuration
-WORLD_WIDTH = 2000
-WORLD_HEIGHT = 2000
+WORLD_WIDTH = 5000
+WORLD_HEIGHT = 5000
 INITIAL_RADIUS = 20
 MAX_RADIUS = 150
 MIN_RADIUS = 10
 BASE_SPEED = 14
-SPEED_SCALING = 0.3  # Higher = more speed difference between small and large
-ENERGY_ORB_COUNT = 100
+SPEED_SCALING = 0.2  # Higher = more speed difference between small and large
+ENERGY_ORB_COUNT = 625
 ENERGY_ORB_VALUE = 2
 ENERGY_ORB_RADIUS = 8
-SPIKE_ORB_COUNT = 15  # Evil spike orbs
+SPIKE_ORB_COUNT = 90  # Evil spike orbs
 SPIKE_ORB_RADIUS = 12
-GOLDEN_ORB_COUNT = 5  # Rare golden orbs
+GOLDEN_ORB_COUNT = 30  # Rare golden orbs
 GOLDEN_ORB_VALUE = 10  # 5x energy orb value
 GOLDEN_ORB_RADIUS = 12
 TICK_RATE = 1 / 30  # 30 FPS (reduced from 60 for memory efficiency)
@@ -57,6 +57,7 @@ BOOST_MASS_COST = 3  # radius cost to boost
 PROJECTILE_SPEED = 25
 PROJECTILE_RADIUS = 5
 PROJECTILE_LIFETIME = 2.0  # seconds
+PROJECTILE_RAPID_FIRE_LIFETIME = 3.2  # seconds (40% of map at speed 25)
 PROJECTILE_DAMAGE = 10  # radius removed from target
 PROJECTILE_COST = 5  # radius cost to shooter
 PROJECTILE_COOLDOWN = 0.5  # seconds between shots
@@ -67,7 +68,7 @@ CRITICAL_MASS_THRESHOLD = 100  # radius threshold to start timer
 CRITICAL_MASS_TIMER = 30.0  # seconds before explosion
 
 # Power-up configuration
-POWERUP_COUNT = 2  # max on map at once
+POWERUP_COUNT = 5  # max on map at once
 POWERUP_RADIUS = 14
 POWERUP_RESPAWN_DELAY = 30.0  # seconds before replacement spawns
 POWERUP_TYPES = ["shield", "rapid_fire", "magnet", "phantom"]
@@ -83,19 +84,19 @@ KILL_FEED_MAX = 5  # max messages to show
 KILL_FEED_DURATION = 5.0  # seconds before message expires
 
 # Walls/Obstacles
-WALL_COUNT = 8
+WALL_COUNT = 20
 
 # ── Natural Disaster Configuration ──
-DISASTER_MIN_INTERVAL = 600.0  # 10 minutes minimum between disasters
-DISASTER_MAX_INTERVAL = 900.0  # 15 minutes maximum between disasters
+DISASTER_MIN_INTERVAL = 290.0  # ~5 minutes between disasters (minus jitter)
+DISASTER_MAX_INTERVAL = 330.0  # ~5 minutes + 10-30s jitter
 DISASTER_WARNING_TIME = 5.0    # seconds of warning before disaster hits
 DISASTER_MIN_PLAYERS = 2       # need at least 2 players to trigger
 DISASTER_SETTLE_TIME = 120.0   # 2 min grace period after lobby first fills
 
 # Black Hole
-BLACK_HOLE_DURATION = 15.0
+BLACK_HOLE_DURATION = 30.0
 BLACK_HOLE_MAX_RADIUS = 80     # visual/kill radius at full size
-BLACK_HOLE_PULL_RANGE = 500    # gravitational pull range
+BLACK_HOLE_PULL_RANGE = 750    # gravitational pull range
 BLACK_HOLE_PULL_STRENGTH = 18  # base pull speed (scaled by distance)
 BLACK_HOLE_MASS_FACTOR = 0.7   # smaller players pulled harder (inverse mass)
 
@@ -112,63 +113,66 @@ FOG_VISIBILITY_RADIUS = 300    # pixels around player
 
 # Feeding Frenzy
 FRENZY_DURATION = 10.0
-FRENZY_ORB_COUNT = 250         # orbs spawned at start
+FRENZY_ORB_COUNT = 1500        # orbs spawned at start
 
 # Supernova
-SUPERNOVA_RADIUS = 600         # blast radius from center
-SUPERNOVA_MASS_LOSS_MIN = 0.20 # 20% mass loss
-SUPERNOVA_MASS_LOSS_MAX = 0.30 # 30% mass loss
+SUPERNOVA_RADIUS = 900         # blast radius from center
+SUPERNOVA_PULSE_COUNT = 5      # number of ripple pulses
+SUPERNOVA_PULSE_INTERVAL = 1.5 # seconds between each pulse
+SUPERNOVA_PULSE_EXPAND_TIME = 1.2  # seconds for each ring to expand
+SUPERNOVA_MASS_LOSS_MIN = 0.08 # 8% mass loss per pulse (5 pulses ≈ 34% total)
+SUPERNOVA_MASS_LOSS_MAX = 0.12 # 12% mass loss per pulse (5 pulses ≈ 47% total)
 
 # Earthquake
 EARTHQUAKE_DURATION = 3.0      # wall transition time
 
+# Derived / internal constants
+WALL_COLLISION_ITERATIONS = 3          # stability passes for wall push-out
+MOVE_THRESHOLD_SQ = 25                 # 5^2 - minimum distance before moving
+KILL_BASE_SCORE = 100                  # base score for consuming a player
+KILL_SCORE_RATIO = 0.1                 # fraction of victim's score awarded as bonus
+BLACK_HOLE_INITIAL_RADIUS = 5.0        # starting radius before growth
+BLACK_HOLE_KILL_RADIUS_FACTOR = 0.5    # fraction of current_radius that kills
+BLACK_HOLE_ORB_PULL_STRENGTH = 8       # orb-specific pull strength
+BLACK_HOLE_EXIT_ORB_COUNT = 30         # orbs scattered on collapse
+METEOR_MARKER_DURATION = 0.5           # seconds to keep impact marker visible
+
 
 @dataclass
-class EnergyOrb:
+class BaseOrb:
+    """Base class for all orb types with shared serialization."""
     id: str
     x: float
     y: float
+    radius: float = 0
+    color: str = ""
+
+    def to_dict(self):
+        return {"id": self.id, "x": round(self.x, 1), "y": round(self.y, 1), "radius": self.radius, "color": self.color}
+
+
+@dataclass
+class EnergyOrb(BaseOrb):
     radius: float = ENERGY_ORB_RADIUS
     color: str = "#00ff88"
 
-    def to_dict(self):
-        return {"id": self.id, "x": round(self.x, 1), "y": round(self.y, 1), "radius": self.radius, "color": self.color}
-
 
 @dataclass
-class SpikeOrb:
-    id: str
-    x: float
-    y: float
+class SpikeOrb(BaseOrb):
     radius: float = SPIKE_ORB_RADIUS
     color: str = "#ff2266"
 
-    def to_dict(self):
-        return {"id": self.id, "x": round(self.x, 1), "y": round(self.y, 1), "radius": self.radius, "color": self.color}
-
 
 @dataclass
-class GoldenOrb:
-    id: str
-    x: float
-    y: float
+class GoldenOrb(BaseOrb):
     radius: float = GOLDEN_ORB_RADIUS
     color: str = "#ffd700"
 
-    def to_dict(self):
-        return {"id": self.id, "x": round(self.x, 1), "y": round(self.y, 1), "radius": self.radius, "color": self.color}
-
 
 @dataclass
-class PowerUpOrb:
-    id: str
-    x: float
-    y: float
+class PowerUpOrb(BaseOrb):
     radius: float = POWERUP_RADIUS
     color: str = "#dd44ff"
-
-    def to_dict(self):
-        return {"id": self.id, "x": round(self.x, 1), "y": round(self.y, 1), "radius": self.radius, "color": self.color}
 
 
 @dataclass
@@ -182,6 +186,7 @@ class Projectile:
     radius: float = PROJECTILE_RADIUS
     color: str = "#ffffff"
     created_at: float = 0.0
+    lifetime: float = PROJECTILE_LIFETIME
 
     def to_dict(self):
         return {
@@ -297,6 +302,16 @@ class Player:
     def check_invincible(self, current_time: float):
         return current_time < self.invincible_until
 
+    def has_protection(self, current_time: float) -> bool:
+        """Check if player is protected by invincibility, shield, or phantom."""
+        if current_time < self.invincible_until:
+            return True
+        return self.active_powerup in ("shield", "phantom") and current_time < self.powerup_until
+
+    def has_shield(self, current_time: float) -> bool:
+        """Check if player has an active shield power-up."""
+        return self.active_powerup == "shield" and current_time < self.powerup_until
+
 
 DISASTER_TYPES = ["black_hole", "meteor_shower", "fog_of_war", "feeding_frenzy", "supernova", "earthquake"]
 
@@ -354,7 +369,8 @@ class DisasterManager:
         self.supernova_x: float = 0
         self.supernova_y: float = 0
         self.supernova_triggered: bool = False
-        self.supernova_time: float = 0  # when the flash happened
+        self.supernova_time: float = 0  # when the first pulse started
+        self.supernova_pulses_fired: int = 0  # how many pulses have triggered
         # Earthquake state
         self.earthquake_progress: float = 0  # 0..1
         self.earthquake_old_walls: list = []
@@ -419,104 +435,113 @@ class DisasterManager:
 
     def _start_disaster(self, dtype: str, current_time: float):
         self.active_disaster = dtype
+        self.disaster_start = current_time
+        starters = {
+            "black_hole": self._start_black_hole,
+            "meteor_shower": self._start_meteor_shower,
+            "fog_of_war": self._start_fog_of_war,
+            "feeding_frenzy": self._start_feeding_frenzy,
+            "supernova": self._start_supernova,
+            "earthquake": self._start_earthquake,
+        }
+        starters[dtype](current_time)
 
-        if dtype == "black_hole":
-            self.disaster_start = current_time
-            self.disaster_end = current_time + BLACK_HOLE_DURATION
-            x, y = self.game.find_safe_orb_position(BLACK_HOLE_MAX_RADIUS)
-            self.black_hole = BlackHole(x=x, y=y)
+    def _start_black_hole(self, current_time: float):
+        self.disaster_end = current_time + BLACK_HOLE_DURATION
+        x, y = self.game.find_safe_orb_position(BLACK_HOLE_MAX_RADIUS)
+        self.black_hole = BlackHole(x=x, y=y)
 
-        elif dtype == "meteor_shower":
-            self.disaster_start = current_time
-            self.disaster_end = current_time + METEOR_SHOWER_DURATION
-            self.meteors = []
-            self.last_meteor_time = current_time
+    def _start_meteor_shower(self, current_time: float):
+        self.disaster_end = current_time + METEOR_SHOWER_DURATION
+        self.meteors = []
+        self.last_meteor_time = current_time
 
-        elif dtype == "fog_of_war":
-            self.disaster_start = current_time
-            self.disaster_end = current_time + FOG_DURATION
-            self.fog_active = True
+    def _start_fog_of_war(self, current_time: float):
+        self.disaster_end = current_time + FOG_DURATION
+        self.fog_active = True
 
-        elif dtype == "feeding_frenzy":
-            self.disaster_start = current_time
-            self.disaster_end = current_time + FRENZY_DURATION
-            self._spawn_frenzy_orbs()
+    def _start_feeding_frenzy(self, current_time: float):
+        self.disaster_end = current_time + FRENZY_DURATION
+        self._spawn_frenzy_orbs()
 
-        elif dtype == "supernova":
-            # Supernova is instant — no duration, just a flash
-            self.supernova_x = random.uniform(200, WORLD_WIDTH - 200)
-            self.supernova_y = random.uniform(200, WORLD_HEIGHT - 200)
-            self.supernova_triggered = True
-            self.supernova_time = current_time
-            self._apply_supernova()
-            # Give 3 seconds for the visual to play out
-            self.disaster_start = current_time
-            self.disaster_end = current_time + 3.0
+    def _start_supernova(self, current_time: float):
+        self.supernova_x = random.uniform(200, WORLD_WIDTH - 200)
+        self.supernova_y = random.uniform(200, WORLD_HEIGHT - 200)
+        self.supernova_triggered = True
+        self.supernova_time = current_time
+        self.supernova_pulses_fired = 1
+        self._apply_supernova()
+        total_duration = (SUPERNOVA_PULSE_COUNT - 1) * SUPERNOVA_PULSE_INTERVAL + SUPERNOVA_PULSE_EXPAND_TIME + 0.5
+        self.disaster_end = current_time + total_duration
 
-        elif dtype == "earthquake":
-            self.disaster_start = current_time
-            self.disaster_end = current_time + EARTHQUAKE_DURATION
-            self.earthquake_progress = 0
-            # Save current wall positions
-            self.earthquake_old_walls = [
-                {"id": w.id, "x": w.x, "y": w.y, "width": w.width, "height": w.height}
-                for w in self.game.walls.values()
-            ]
-            # Generate new random wall positions
-            self.earthquake_new_walls = self._generate_new_wall_positions()
+    def _start_earthquake(self, current_time: float):
+        self.disaster_end = current_time + EARTHQUAKE_DURATION
+        self.earthquake_progress = 0
+        self.earthquake_old_walls = [
+            {"id": w.id, "x": w.x, "y": w.y, "width": w.width, "height": w.height}
+            for w in self.game.walls.values()
+        ]
+        self.earthquake_new_walls = self._generate_new_wall_positions()
 
     def _tick_disaster(self, current_time: float):
-        if self.active_disaster == "black_hole":
-            self._tick_black_hole(current_time)
-        elif self.active_disaster == "meteor_shower":
-            self._tick_meteor_shower(current_time)
-        elif self.active_disaster == "earthquake":
-            self._tick_earthquake(current_time)
-        # fog_of_war, feeding_frenzy, supernova have no per-tick server logic beyond their setup
+        tickers = {
+            "black_hole": self._tick_black_hole,
+            "meteor_shower": self._tick_meteor_shower,
+            "earthquake": self._tick_earthquake,
+            "supernova": self._tick_supernova,
+        }
+        ticker = tickers.get(self.active_disaster)
+        if ticker:
+            ticker(current_time)
 
     def _end_disaster(self, current_time: float):
-        dtype = self.active_disaster
-
-        if dtype == "black_hole":
-            # Collapse — scatter energy orbs outward from center
-            if self.black_hole:
-                for _ in range(30):
-                    angle = random.uniform(0, math.pi * 2)
-                    dist = random.uniform(50, 300)
-                    ox = self.black_hole.x + math.cos(angle) * dist
-                    oy = self.black_hole.y + math.sin(angle) * dist
-                    ox = max(50, min(WORLD_WIDTH - 50, ox))
-                    oy = max(50, min(WORLD_HEIGHT - 50, oy))
-                    self.game.orb_counter += 1
-                    orb_id = f"orb_{self.game.orb_counter}"
-                    self.game.energy_orbs[orb_id] = EnergyOrb(id=orb_id, x=ox, y=oy)
-                self.game._energy_orbs_cache = None
-            self.black_hole = None
-
-        elif dtype == "meteor_shower":
-            self.meteors = []
-
-        elif dtype == "fog_of_war":
-            self.fog_active = False
-
-        elif dtype == "feeding_frenzy":
-            # Remove remaining frenzy orbs
-            for orb_id in self.frenzy_orb_ids:
-                if orb_id in self.game.energy_orbs:
-                    del self.game.energy_orbs[orb_id]
-            self.frenzy_orb_ids = []
-            self.game._energy_orbs_cache = None
-
-        elif dtype == "supernova":
-            self.supernova_triggered = False
-
-        elif dtype == "earthquake":
-            # Snap walls to final positions
-            self._finalize_earthquake()
-            self.earthquake_progress = 0
-
+        enders = {
+            "black_hole": self._end_black_hole,
+            "meteor_shower": self._end_meteor_shower,
+            "fog_of_war": self._end_fog_of_war,
+            "feeding_frenzy": self._end_feeding_frenzy,
+            "supernova": self._end_supernova,
+            "earthquake": self._end_earthquake,
+        }
+        ender = enders.get(self.active_disaster)
+        if ender:
+            ender()
         self.active_disaster = None
         self.next_disaster_time = current_time + random.uniform(DISASTER_MIN_INTERVAL, DISASTER_MAX_INTERVAL)
+
+    def _end_black_hole(self):
+        if self.black_hole:
+            for _ in range(BLACK_HOLE_EXIT_ORB_COUNT):
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(50, 300)
+                ox = max(50, min(WORLD_WIDTH - 50, self.black_hole.x + math.cos(angle) * dist))
+                oy = max(50, min(WORLD_HEIGHT - 50, self.black_hole.y + math.sin(angle) * dist))
+                self.game.orb_counter += 1
+                orb_id = f"orb_{self.game.orb_counter}"
+                self.game.energy_orbs[orb_id] = EnergyOrb(id=orb_id, x=ox, y=oy)
+            self.game._energy_orbs_cache = None
+        self.black_hole = None
+
+    def _end_meteor_shower(self):
+        self.meteors = []
+
+    def _end_fog_of_war(self):
+        self.fog_active = False
+
+    def _end_feeding_frenzy(self):
+        for orb_id in self.frenzy_orb_ids:
+            if orb_id in self.game.energy_orbs:
+                del self.game.energy_orbs[orb_id]
+        self.frenzy_orb_ids = []
+        self.game._energy_orbs_cache = None
+
+    def _end_supernova(self):
+        self.supernova_triggered = False
+        self.supernova_pulses_fired = 0
+
+    def _end_earthquake(self):
+        self._finalize_earthquake()
+        self.earthquake_progress = 0
 
     # ── Black Hole ──
 
@@ -526,53 +551,52 @@ class DisasterManager:
             return
         elapsed = current_time - self.disaster_start
         progress = min(1.0, elapsed / BLACK_HOLE_DURATION)
-        # Grow over time
-        bh.current_radius = 5 + (bh.max_radius - 5) * progress
+        bh.current_radius = BLACK_HOLE_INITIAL_RADIUS + (bh.max_radius - BLACK_HOLE_INITIAL_RADIUS) * progress
 
-        # Pull players
+        self._apply_black_hole_pull(bh, progress, current_time)
+        self._apply_black_hole_orb_pull(bh, progress)
+
+    def _apply_black_hole_pull(self, bh, progress: float, current_time: float):
+        """Pull players toward the black hole and kill those that reach the center."""
         for player in self.game.players.values():
             if not player.alive:
                 continue
-            # Shield and invincibility don't save you from gravity (but do from kill)
             dx = bh.x - player.x
             dy = bh.y - player.y
-            dist_sq = dx * dx + dy * dy
-            if dist_sq < 1:
-                dist_sq = 1
+            dist_sq = max(1, dx * dx + dy * dy)
             dist = math.sqrt(dist_sq)
 
-            if dist < BLACK_HOLE_PULL_RANGE:
-                # Pull strength: increases as you get closer, lighter players pulled harder
-                mass_factor = (INITIAL_RADIUS / player.radius) ** BLACK_HOLE_MASS_FACTOR
-                proximity_factor = 1.0 - (dist / BLACK_HOLE_PULL_RANGE)
-                pull = BLACK_HOLE_PULL_STRENGTH * proximity_factor * mass_factor * progress
-                player.x += (dx / dist) * pull
-                player.y += (dy / dist) * pull
+            if dist >= BLACK_HOLE_PULL_RANGE:
+                continue
 
-                # Kill if dragged into center
-                if dist < bh.current_radius * 0.5:
-                    if not player.check_invincible(current_time):
-                        has_shield = player.active_powerup == "shield" and current_time < player.powerup_until
-                        if not has_shield:
-                            player.alive = False
-                            player.score = 0
-                            self.game.add_kill("Black Hole", player.name)
+            mass_factor = (INITIAL_RADIUS / player.radius) ** BLACK_HOLE_MASS_FACTOR
+            proximity_factor = 1.0 - (dist / BLACK_HOLE_PULL_RANGE)
+            pull = BLACK_HOLE_PULL_STRENGTH * proximity_factor * mass_factor * progress
+            player.x += (dx / dist) * pull
+            player.y += (dy / dist) * pull
 
-        # Pull energy orbs toward center
+            if dist < bh.current_radius * BLACK_HOLE_KILL_RADIUS_FACTOR:
+                if not player.check_invincible(current_time) and not player.has_shield(current_time):
+                    player.alive = False
+                    player.score = 0
+                    self.game.add_kill("Black Hole", player.name)
+
+    def _apply_black_hole_orb_pull(self, bh, progress: float):
+        """Pull energy orbs toward the black hole and consume those that reach the center."""
         orb_moved = False
         for orb in self.game.energy_orbs.values():
             dx = bh.x - orb.x
             dy = bh.y - orb.y
             dist = math.sqrt(dx * dx + dy * dy)
             if 0 < dist < BLACK_HOLE_PULL_RANGE:
-                pull = 8 * (1.0 - dist / BLACK_HOLE_PULL_RANGE) * progress
+                pull = BLACK_HOLE_ORB_PULL_STRENGTH * (1.0 - dist / BLACK_HOLE_PULL_RANGE) * progress
                 orb.x += (dx / dist) * pull
                 orb.y += (dy / dist) * pull
                 orb_moved = True
 
-        # Consume orbs that reach center
+        kill_radius_sq = (bh.current_radius * BLACK_HOLE_KILL_RADIUS_FACTOR) ** 2
         orbs_consumed = [oid for oid, orb in self.game.energy_orbs.items()
-                         if math.sqrt((orb.x - bh.x)**2 + (orb.y - bh.y)**2) < bh.current_radius * 0.5]
+                         if (orb.x - bh.x)**2 + (orb.y - bh.y)**2 < kill_radius_sq]
         for oid in orbs_consumed:
             del self.game.energy_orbs[oid]
 
@@ -581,52 +605,47 @@ class DisasterManager:
 
     # ── Meteor Shower ──
 
+    def _is_sheltered(self, player) -> bool:
+        """Check if a player is sheltered by a wall (inside or very close)."""
+        for wall in self.game.walls.values():
+            if (wall.x <= player.x <= wall.x + wall.width and
+                    wall.y <= player.y <= wall.y + wall.height):
+                return True
+            closest_x = max(wall.x, min(player.x, wall.x + wall.width))
+            closest_y = max(wall.y, min(player.y, wall.y + wall.height))
+            wall_dist = math.sqrt((player.x - closest_x)**2 + (player.y - closest_y)**2)
+            if wall_dist < player.radius * 0.5:
+                return True
+        return False
+
     def _tick_meteor_shower(self, current_time: float):
-        # Spawn new meteors at intervals
         if current_time - self.last_meteor_time >= METEOR_INTERVAL:
             self.last_meteor_time = current_time
             for _ in range(METEOR_COUNT_PER_WAVE):
                 mx = random.uniform(50, WORLD_WIDTH - 50)
                 my = random.uniform(50, WORLD_HEIGHT - 50)
                 self.meteors.append(Meteor(x=mx, y=my, impact_time=current_time))
+                self._apply_meteor_damage(mx, my, current_time)
 
-                # Damage players in blast radius
-                for player in self.game.players.values():
-                    if not player.alive:
-                        continue
-                    if player.check_invincible(current_time):
-                        continue
-                    has_shield = player.active_powerup == "shield" and current_time < player.powerup_until
-                    if has_shield:
-                        continue
-                    # Check if player is sheltered by a wall
-                    sheltered = False
-                    for wall in self.game.walls.values():
-                        if (wall.x <= player.x <= wall.x + wall.width and
-                                wall.y <= player.y <= wall.y + wall.height):
-                            sheltered = True
-                            break
-                        # Also check if near a wall (within player radius)
-                        closest_x = max(wall.x, min(player.x, wall.x + wall.width))
-                        closest_y = max(wall.y, min(player.y, wall.y + wall.height))
-                        wall_dist = math.sqrt((player.x - closest_x)**2 + (player.y - closest_y)**2)
-                        if wall_dist < player.radius * 0.5:
-                            sheltered = True
-                            break
-                    if sheltered:
-                        continue
+        self.meteors = [m for m in self.meteors if current_time - m.impact_time < METEOR_MARKER_DURATION]
 
-                    dx = player.x - mx
-                    dy = player.y - my
-                    if dx * dx + dy * dy < (METEOR_BLAST_RADIUS + player.radius) ** 2:
-                        player.radius = max(MIN_RADIUS, player.radius - METEOR_DAMAGE)
-                        if player.radius <= MIN_RADIUS:
-                            player.alive = False
-                            player.score = 0
-                            self.game.add_kill("Meteor", player.name)
-
-        # Clean up old meteor markers (keep for 0.5s for visual)
-        self.meteors = [m for m in self.meteors if current_time - m.impact_time < 0.5]
+    def _apply_meteor_damage(self, mx: float, my: float, current_time: float):
+        """Damage players in blast radius of a meteor impact."""
+        for player in self.game.players.values():
+            if not player.alive or player.check_invincible(current_time):
+                continue
+            if player.has_shield(current_time):
+                continue
+            if self._is_sheltered(player):
+                continue
+            dx = player.x - mx
+            dy = player.y - my
+            if dx * dx + dy * dy < (METEOR_BLAST_RADIUS + player.radius) ** 2:
+                player.radius = max(MIN_RADIUS, player.radius - METEOR_DAMAGE)
+                if player.radius <= MIN_RADIUS:
+                    player.alive = False
+                    player.score = 0
+                    self.game.add_kill("Meteor", player.name)
 
     # ── Feeding Frenzy ──
 
@@ -644,6 +663,16 @@ class DisasterManager:
         self.game._energy_orbs_cache = None
 
     # ── Supernova ──
+
+    def _tick_supernova(self, current_time: float):
+        """Fire subsequent pulses at intervals."""
+        if self.supernova_pulses_fired >= SUPERNOVA_PULSE_COUNT:
+            return
+        elapsed = current_time - self.supernova_time
+        next_pulse_time = self.supernova_pulses_fired * SUPERNOVA_PULSE_INTERVAL
+        if elapsed >= next_pulse_time:
+            self.supernova_pulses_fired += 1
+            self._apply_supernova()
 
     def _apply_supernova(self):
         loss_pct = random.uniform(SUPERNOVA_MASS_LOSS_MIN, SUPERNOVA_MASS_LOSS_MAX)
@@ -717,7 +746,10 @@ class DisasterManager:
                 "x": round(self.supernova_x, 1),
                 "y": round(self.supernova_y, 1),
                 "radius": SUPERNOVA_RADIUS,
-                "time": round(current_time - self.supernova_time, 2)
+                "time": round(current_time - self.supernova_time, 2),
+                "pulse_count": SUPERNOVA_PULSE_COUNT,
+                "pulse_interval": SUPERNOVA_PULSE_INTERVAL,
+                "pulse_expand": SUPERNOVA_PULSE_EXPAND_TIME
             }
         elif self.active_disaster == "earthquake":
             state["earthquake_progress"] = round(self.earthquake_progress, 2)
@@ -851,7 +883,7 @@ class GameState:
             # Central cross
             {"x": WORLD_WIDTH // 2 - 150, "y": WORLD_HEIGHT // 2 - 25, "width": 300, "height": 50},
             {"x": WORLD_WIDTH // 2 - 25, "y": WORLD_HEIGHT // 2 - 150, "width": 50, "height": 300},
-            # Corner L-shapes
+            # Corner L-shapes (4 corners, 2 walls each = 8 walls)
             {"x": 200, "y": 200, "width": 150, "height": 30},
             {"x": 200, "y": 200, "width": 30, "height": 150},
             {"x": WORLD_WIDTH - 350, "y": 200, "width": 150, "height": 30},
@@ -861,6 +893,19 @@ class GameState:
             {"x": WORLD_WIDTH - 350, "y": WORLD_HEIGHT - 230, "width": 150, "height": 30},
             {"x": WORLD_WIDTH - 230, "y": WORLD_HEIGHT - 350, "width": 30, "height": 150},
         ]
+        # Fill remaining wall slots with random walls spread across the map
+        remaining = WALL_COUNT - len(wall_configs)
+        for _ in range(remaining):
+            if random.random() < 0.5:
+                w = random.randint(120, 300)
+                h = random.randint(25, 50)
+            else:
+                w = random.randint(25, 50)
+                h = random.randint(120, 300)
+            x = random.uniform(300, WORLD_WIDTH - 300 - w)
+            y = random.uniform(300, WORLD_HEIGHT - 300 - h)
+            wall_configs.append({"x": x, "y": y, "width": w, "height": h})
+
         for i, cfg in enumerate(wall_configs):
             wall_id = f"wall_{i}"
             self.walls[wall_id] = Wall(
@@ -951,7 +996,8 @@ class GameState:
             dx=ndx,
             dy=ndy,
             color=player.color,
-            created_at=current_time
+            created_at=current_time,
+            lifetime=PROJECTILE_RAPID_FIRE_LIFETIME if has_rapid_fire else PROJECTILE_LIFETIME
         )
 
     def add_player(self, player_id: str, name: str, websocket) -> Player:
@@ -1023,11 +1069,8 @@ class GameState:
             player.active_powerup = ""
             player.powerup_until = 0
 
-    def tick(self):
-        """Update game state for one tick."""
-        current_time = time.time()
-
-        # Move players towards their targets
+    def _move_players(self, current_time: float):
+        """Move players towards targets, handle bounds and wall collisions, apply shrink."""
         for player in self.players.values():
             if not player.alive:
                 continue
@@ -1038,7 +1081,7 @@ class GameState:
             dy = player.target_y - player.y
             dist_sq = dx * dx + dy * dy
 
-            if dist_sq > 25:  # 5^2
+            if dist_sq > MOVE_THRESHOLD_SQ:
                 distance = math.sqrt(dist_sq)
                 speed = player.get_speed(current_time)
                 player.x += (dx / distance) * speed
@@ -1049,51 +1092,65 @@ class GameState:
             player.y = max(player.radius, min(WORLD_HEIGHT - player.radius, player.y))
 
             # Wall collisions - push player out of walls (phantom passes through)
-            wall_iters = 0 if (player.active_powerup == "phantom" and current_time < player.powerup_until) else 3
-            for _iteration in range(wall_iters):
-                for wall in self.walls.values():
-                    # Check if player overlaps with wall
-                    closest_x = max(wall.x, min(player.x, wall.x + wall.width))
-                    closest_y = max(wall.y, min(player.y, wall.y + wall.height))
-                    dist_x = player.x - closest_x
-                    dist_y = player.y - closest_y
-                    dist = math.sqrt(dist_x * dist_x + dist_y * dist_y)
-
-                    if dist < player.radius:
-                        if dist > 0:
-                            overlap = player.radius - dist + 1
-                            player.x += (dist_x / dist) * overlap
-                            player.y += (dist_y / dist) * overlap
-                        else:
-                            # Player center is inside wall - push back toward previous position
-                            push_dx = prev_x - player.x
-                            push_dy = prev_y - player.y
-                            push_dist = math.sqrt(push_dx * push_dx + push_dy * push_dy)
-                            if push_dist > 0:
-                                # Push back the way they came
-                                player.x = prev_x
-                                player.y = prev_y
-                            else:
-                                # Fallback: push to nearest edge
-                                push_left = player.x - wall.x
-                                push_right = (wall.x + wall.width) - player.x
-                                push_up = player.y - wall.y
-                                push_down = (wall.y + wall.height) - player.y
-                                min_push = min(push_left, push_right, push_up, push_down)
-                                if min_push == push_left:
-                                    player.x = wall.x - player.radius - 1
-                                elif min_push == push_right:
-                                    player.x = wall.x + wall.width + player.radius + 1
-                                elif min_push == push_up:
-                                    player.y = wall.y - player.radius - 1
-                                else:
-                                    player.y = wall.y + wall.height + player.radius + 1
+            self._resolve_wall_collisions(player, prev_x, prev_y, current_time)
 
             # Slowly shrink (but not below minimum)
             if player.radius > MIN_RADIUS + 5:
                 player.radius = max(MIN_RADIUS, player.radius - SHRINK_RATE)
 
-        # Check energy orb collisions
+    def _resolve_wall_collisions(self, player, prev_x: float, prev_y: float, current_time: float):
+        """Push a player out of any overlapping walls."""
+        is_phantom = player.active_powerup == "phantom" and current_time < player.powerup_until
+        wall_iters = 0 if is_phantom else WALL_COLLISION_ITERATIONS
+        for _iteration in range(wall_iters):
+            for wall in self.walls.values():
+                closest_x = max(wall.x, min(player.x, wall.x + wall.width))
+                closest_y = max(wall.y, min(player.y, wall.y + wall.height))
+                dist_x = player.x - closest_x
+                dist_y = player.y - closest_y
+                dist = math.sqrt(dist_x * dist_x + dist_y * dist_y)
+
+                if dist < player.radius:
+                    if dist > 0:
+                        overlap = player.radius - dist + 1
+                        player.x += (dist_x / dist) * overlap
+                        player.y += (dist_y / dist) * overlap
+                    else:
+                        self._push_player_from_wall(player, wall, prev_x, prev_y)
+
+    def _push_player_from_wall(self, player, wall, prev_x: float, prev_y: float):
+        """Push a player whose center is inside a wall back to safety."""
+        push_dx = prev_x - player.x
+        push_dy = prev_y - player.y
+        push_dist = math.sqrt(push_dx * push_dx + push_dy * push_dy)
+        if push_dist > 0:
+            player.x = prev_x
+            player.y = prev_y
+        else:
+            # Fallback: push to nearest edge
+            push_left = player.x - wall.x
+            push_right = (wall.x + wall.width) - player.x
+            push_up = player.y - wall.y
+            push_down = (wall.y + wall.height) - player.y
+            min_push = min(push_left, push_right, push_up, push_down)
+            if min_push == push_left:
+                player.x = wall.x - player.radius - 1
+            elif min_push == push_right:
+                player.x = wall.x + wall.width + player.radius + 1
+            elif min_push == push_up:
+                player.y = wall.y - player.radius - 1
+            else:
+                player.y = wall.y + wall.height + player.radius + 1
+
+    def _check_orb_collisions(self, current_time: float):
+        """Handle all orb pickup collisions (energy, spike, golden, power-up) and respawns."""
+        self._collect_energy_orbs()
+        self._collect_spike_orbs(current_time)
+        self._collect_golden_orbs()
+        self._collect_powerup_orbs(current_time)
+        self._process_powerup_respawns(current_time)
+
+    def _collect_energy_orbs(self):
         orbs_to_remove = []
         for orb_id, orb in self.energy_orbs.items():
             for player in self.players.values():
@@ -1102,47 +1159,39 @@ class GameState:
                 dx = player.x - orb.x
                 dy = player.y - orb.y
                 combined = player.radius + orb.radius
-
                 if dx * dx + dy * dy < combined * combined:
                     player.radius = min(MAX_RADIUS, player.radius + ENERGY_ORB_VALUE)
                     player.score += 10
                     orbs_to_remove.append(orb_id)
                     break
-
-        # Remove collected orbs and spawn new ones
         if orbs_to_remove:
             for orb_id in orbs_to_remove:
                 del self.energy_orbs[orb_id]
             self.spawn_energy_orbs(len(orbs_to_remove))
             self._energy_orbs_cache = None
 
-        # Check spike orb collisions (evil orbs that halve your size!)
+    def _collect_spike_orbs(self, current_time: float):
         spikes_to_remove = []
         for orb_id, orb in self.spike_orbs.items():
             for player in self.players.values():
                 if not player.alive:
                     continue
-                # Shield and phantom block spike damage
-                if player.active_powerup in ("shield", "phantom") and current_time < player.powerup_until:
+                if player.has_protection(current_time):
                     continue
                 dx = player.x - orb.x
                 dy = player.y - orb.y
                 combined = player.radius + orb.radius
-
                 if dx * dx + dy * dy < combined * combined:
-                    player.radius = max(MIN_RADIUS, player.radius * 0.5)
-                    player.score = max(0, player.score // 2)
+                    player.radius = max(MIN_RADIUS, player.radius * 0.75)
                     spikes_to_remove.append(orb_id)
                     break
-
-        # Remove collected spikes and spawn new ones
         if spikes_to_remove:
             for orb_id in spikes_to_remove:
                 del self.spike_orbs[orb_id]
             self.spawn_spike_orbs(len(spikes_to_remove))
             self._spike_orbs_cache = None
 
-        # Check golden orb collisions (rare, high value!)
+    def _collect_golden_orbs(self):
         golden_to_remove = []
         for orb_id, orb in self.golden_orbs.items():
             for player in self.players.values():
@@ -1151,21 +1200,18 @@ class GameState:
                 dx = player.x - orb.x
                 dy = player.y - orb.y
                 combined = player.radius + orb.radius
-
                 if dx * dx + dy * dy < combined * combined:
                     player.radius = min(MAX_RADIUS, player.radius + GOLDEN_ORB_VALUE)
                     player.score += 50
                     golden_to_remove.append(orb_id)
                     break
-
-        # Remove collected golden orbs and spawn new ones
         if golden_to_remove:
             for orb_id in golden_to_remove:
                 del self.golden_orbs[orb_id]
             self.spawn_golden_orbs(len(golden_to_remove))
             self._golden_orbs_cache = None
 
-        # Check power-up orb collisions
+    def _collect_powerup_orbs(self, current_time: float):
         powerups_to_remove = []
         for orb_id, orb in self.powerup_orbs.items():
             for player in self.players.values():
@@ -1180,7 +1226,6 @@ class GameState:
                     player.powerup_until = current_time + POWERUP_DURATIONS[powerup_type]
                     powerups_to_remove.append(orb_id)
                     break
-
         if powerups_to_remove:
             for orb_id in powerups_to_remove:
                 del self.powerup_orbs[orb_id]
@@ -1188,14 +1233,23 @@ class GameState:
             for _ in powerups_to_remove:
                 self.powerup_respawn_timers.append(current_time + POWERUP_RESPAWN_DELAY)
 
-        # Power-up respawn timer
+    def _process_powerup_respawns(self, current_time: float):
         if self.powerup_respawn_timers:
             respawns = [t for t in self.powerup_respawn_timers if current_time >= t]
             if respawns:
                 self.powerup_respawn_timers = [t for t in self.powerup_respawn_timers if current_time < t]
                 self.spawn_powerup_orbs(len(respawns))
 
-        # Check player vs player collisions
+    def _consume_player(self, consumer, victim):
+        """One player consumes another."""
+        consumer.radius = min(MAX_RADIUS, consumer.radius + victim.radius * 0.5)
+        consumer.score += KILL_BASE_SCORE + int(victim.score * KILL_SCORE_RATIO)
+        victim.alive = False
+        victim.score = 0
+        self.add_kill(consumer.name, victim.name)
+
+    def _check_player_collisions(self, current_time: float):
+        """Handle player vs player consume and bounce collisions."""
         players_list = list(self.players.values())
         for i, player1 in enumerate(players_list):
             if not player1.alive:
@@ -1204,10 +1258,7 @@ class GameState:
                 if not player2.alive:
                     continue
 
-                # Skip if either player is invincible, shielded, or phantom
-                if (player1.check_invincible(current_time) or player2.check_invincible(current_time) or
-                    (player1.active_powerup in ("shield", "phantom") and current_time < player1.powerup_until) or
-                    (player2.active_powerup in ("shield", "phantom") and current_time < player2.powerup_until)):
+                if player1.has_protection(current_time) or player2.has_protection(current_time):
                     continue
 
                 dx = player1.x - player2.x
@@ -1217,111 +1268,95 @@ class GameState:
 
                 if dist_sq < combined * combined:
                     distance = math.sqrt(dist_sq)
-                    # Collision! Larger player consumes smaller
                     if player1.radius > player2.radius * CONSUME_RATIO:
-                        # Player 1 consumes Player 2
-                        player1.radius = min(MAX_RADIUS, player1.radius + player2.radius * 0.5)
-                        player1.score += 100 + int(player2.score * 0.1)
-                        player2.alive = False
-                        player2.score = 0
-                        self.add_kill(player1.name, player2.name)
+                        self._consume_player(player1, player2)
                     elif player2.radius > player1.radius * CONSUME_RATIO:
-                        # Player 2 consumes Player 1
-                        player2.radius = min(MAX_RADIUS, player2.radius + player1.radius * 0.5)
-                        player2.score += 100 + int(player1.score * 0.1)
-                        player1.alive = False
-                        player1.score = 0
-                        self.add_kill(player2.name, player1.name)
-                    else:
-                        # Similar size - bounce off each other
-                        if distance > 0:
-                            overlap = (player1.radius + player2.radius - distance) / 2
-                            player1.x += (dx / distance) * overlap
-                            player1.y += (dy / distance) * overlap
-                            player2.x -= (dx / distance) * overlap
-                            player2.y -= (dy / distance) * overlap
+                        self._consume_player(player2, player1)
+                    elif distance > 0:
+                        overlap = (player1.radius + player2.radius - distance) / 2
+                        player1.x += (dx / distance) * overlap
+                        player1.y += (dy / distance) * overlap
+                        player2.x -= (dx / distance) * overlap
+                        player2.y -= (dy / distance) * overlap
 
-        # Update projectiles
+    def _update_projectiles(self, current_time: float):
+        """Move projectiles and handle wall/player hit detection."""
         projectiles_to_remove = []
         for proj_id, proj in self.projectiles.items():
-            # Move projectile
             proj.x += proj.dx * PROJECTILE_SPEED
             proj.y += proj.dy * PROJECTILE_SPEED
 
-            # Remove if expired or out of bounds
-            if current_time - proj.created_at > PROJECTILE_LIFETIME:
+            if current_time - proj.created_at > proj.lifetime:
                 projectiles_to_remove.append(proj_id)
                 continue
             if proj.x < 0 or proj.x > WORLD_WIDTH or proj.y < 0 or proj.y > WORLD_HEIGHT:
                 projectiles_to_remove.append(proj_id)
                 continue
 
-            # Wall collisions
-            hit_wall = False
-            for wall in self.walls.values():
-                closest_x = max(wall.x, min(proj.x, wall.x + wall.width))
-                closest_y = max(wall.y, min(proj.y, wall.y + wall.height))
-                dist_x = proj.x - closest_x
-                dist_y = proj.y - closest_y
-                dist = math.sqrt(dist_x * dist_x + dist_y * dist_y)
-                if dist < proj.radius:
-                    projectiles_to_remove.append(proj_id)
-                    hit_wall = True
-                    break
-            if hit_wall:
+            if self._projectile_hit_wall(proj):
+                projectiles_to_remove.append(proj_id)
                 continue
 
-            # Player collisions (skip owner and invincible players)
-            for player in self.players.values():
-                if (not player.alive or player.id == proj.owner_id or player.check_invincible(current_time) or
-                    (player.active_powerup in ("shield", "phantom") and current_time < player.powerup_until)):
-                    continue
-                dx = player.x - proj.x
-                dy = player.y - proj.y
-                combined = player.radius + proj.radius
-                if dx * dx + dy * dy < combined * combined:
-                    # Hit! Reduce target radius
-                    player.radius = max(MIN_RADIUS, player.radius - PROJECTILE_DAMAGE)
-                    projectiles_to_remove.append(proj_id)
-                    # Kill if target is at minimum and shooter exists and is larger
-                    if player.radius <= MIN_RADIUS:
-                        shooter = self.players.get(proj.owner_id)
-                        if shooter and shooter.alive and shooter.radius > player.radius * CONSUME_RATIO:
-                            player.alive = False
-                            shooter.score += 100 + int(player.score * 0.1)
-                            player.score = 0
-                            self.add_kill(shooter.name, player.name)
-                    break
+            if self._projectile_hit_player(proj, current_time):
+                projectiles_to_remove.append(proj_id)
 
         for proj_id in projectiles_to_remove:
             if proj_id in self.projectiles:
                 del self.projectiles[proj_id]
 
-        # Critical mass timer
+    def _projectile_hit_wall(self, proj) -> bool:
+        for wall in self.walls.values():
+            closest_x = max(wall.x, min(proj.x, wall.x + wall.width))
+            closest_y = max(wall.y, min(proj.y, wall.y + wall.height))
+            dist_x = proj.x - closest_x
+            dist_y = proj.y - closest_y
+            dist = math.sqrt(dist_x * dist_x + dist_y * dist_y)
+            if dist < proj.radius:
+                return True
+        return False
+
+    def _projectile_hit_player(self, proj, current_time: float) -> bool:
+        for player in self.players.values():
+            if not player.alive or player.id == proj.owner_id or player.has_protection(current_time):
+                continue
+            dx = player.x - proj.x
+            dy = player.y - proj.y
+            combined = player.radius + proj.radius
+            if dx * dx + dy * dy < combined * combined:
+                player.radius = max(MIN_RADIUS, player.radius - PROJECTILE_DAMAGE)
+                if player.radius <= MIN_RADIUS:
+                    shooter = self.players.get(proj.owner_id)
+                    if shooter and shooter.alive and shooter.radius > player.radius * CONSUME_RATIO:
+                        player.alive = False
+                        shooter.score += KILL_BASE_SCORE + int(player.score * KILL_SCORE_RATIO)
+                        player.score = 0
+                        self.add_kill(shooter.name, player.name)
+                return True
+        return False
+
+    def _update_critical_mass(self, current_time: float):
+        """Handle critical mass timer and explosion."""
         for player in self.players.values():
             if not player.alive:
                 continue
             if player.radius >= CRITICAL_MASS_THRESHOLD:
                 if player.critical_mass_start == 0:
-                    # Start the timer
                     player.critical_mass_start = current_time
                 elif current_time - player.critical_mass_start >= CRITICAL_MASS_TIMER:
-                    # EXPLODE!
                     player.radius = INITIAL_RADIUS
                     player.score = max(0, player.score // 2)
                     player.critical_mass_start = 0
                     self.add_kill(player.name, f"{player.name} (exploded)")
             else:
-                # Below threshold, reset timer
                 player.critical_mass_start = 0
 
-        # Power-up expiry
+    def _update_powerups(self, current_time: float):
+        """Handle power-up expiry and magnet pull effect."""
         for player in self.players.values():
             if player.active_powerup and current_time >= player.powerup_until:
                 player.active_powerup = ""
                 player.powerup_until = 0
 
-        # Magnet effect - pull energy orbs toward magnet players
         magnet_moved = False
         for player in self.players.values():
             if not player.alive or player.active_powerup != "magnet" or current_time >= player.powerup_until:
@@ -1338,7 +1373,15 @@ class GameState:
         if magnet_moved:
             self._energy_orbs_cache = None
 
-        # Natural disasters
+    def tick(self):
+        """Update game state for one tick."""
+        current_time = time.time()
+        self._move_players(current_time)
+        self._check_orb_collisions(current_time)
+        self._check_player_collisions(current_time)
+        self._update_projectiles(current_time)
+        self._update_critical_mass(current_time)
+        self._update_powerups(current_time)
         self.disaster_manager.tick(current_time)
 
     def get_static_data(self) -> dict:
