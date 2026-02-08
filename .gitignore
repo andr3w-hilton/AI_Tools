@@ -2,6 +2,10 @@
 /AI_venv/
 /main.py
 
+# Infrastructure / server config
+*.subdomain.conf
+**/TODO.md
+
 # Sensitive files - NEVER commit these
 bot_config.json
 **/bot_config.json
