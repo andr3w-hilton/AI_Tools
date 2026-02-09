@@ -1,3 +1,3 @@
 [submodule "Telegram Bot"]
-	path = Telegram Bot
+	path = Bots/telegram-bot
 	url = https://github.com/andr3w-hilton/telegram-scheduler-bot.git
