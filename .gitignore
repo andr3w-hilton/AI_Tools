@@ -17,6 +17,11 @@ keylog_*.txt
 secrets.json
 credentials.json
 
+# Claude Code
+.claude/
+CLAUDE.md
+**/CLAUDE.md
+
 # IDE
 .idea/
 .vscode/
