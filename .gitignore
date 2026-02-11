@@ -5,6 +5,7 @@
 # Infrastructure / server config
 *.subdomain.conf
 **/TODO.md
+**/docs/
 
 # Sensitive files - NEVER commit these
 bot_config.json
@@ -12,6 +13,7 @@ bot_config.json
 authorized_faces.pkl
 authorized_face.pkl
 keylog_*.txt
+**/logged.txt
 *.env
 .env.*
 secrets.json
