@@ -8,6 +8,9 @@
 **/docs/
 **/playground/
 
+# Security research - kept local only
+Security/
+
 # Sensitive files - NEVER commit these
 bot_config.json
 **/bot_config.json
