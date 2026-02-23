@@ -6,6 +6,7 @@
 *.subdomain.conf
 **/TODO.md
 **/docs/
+**/playground/
 
 # Sensitive files - NEVER commit these
 bot_config.json
