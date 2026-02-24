@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths:
       - 'Games/orb-arena/**'
+  workflow_dispatch:
 
 jobs:
   deploy:
