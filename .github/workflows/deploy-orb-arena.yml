@@ -35,6 +35,7 @@ jobs:
             --exclude='TODO.md' \
             --exclude='*.subdomain.conf' \
             --exclude='sound-test.html' \
+            --exclude='data/' \
             Games/orb-arena/ \
             root@${{ secrets.DROPLET_HOST }}:/root/site/orb-arena/
 
