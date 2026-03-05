@@ -125,7 +125,15 @@ def run():
         # 6. Update running knowledge log
         append_to_knowledge(today, topic, next_topic)
 
-        # 7. Build Telegram summary
+        # 7. Check if Mira wants to propose a change to herself
+        wants_to_grow, desire = think.check_wants_to_grow(reflection)
+        if wants_to_grow:
+            print(f"[Mira] Growth desire detected: {desire}")
+            title, description, filename, code = think.write_proposal(desire, previous_memory)
+            from brain import grow
+            grow.propose_change(title, description, filename, code)
+
+        # 8. Build Telegram summary
         summary = think.telegram_summary(topic, reflection)
 
     path = write_memory(today, memory_content)

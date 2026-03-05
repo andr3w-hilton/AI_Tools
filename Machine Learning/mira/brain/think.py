@@ -134,6 +134,71 @@ def plan_next_session(reflection: str) -> str:
     return think(prompt, max_tokens=100).strip()
 
 
+def check_wants_to_grow(reflection: str) -> tuple[bool, str]:
+    """
+    Check if today's reflection contains a specific, actionable desire to add a new capability.
+    Conservative - vague wishes do not count, only concrete proposals.
+    Returns (wants_to_grow, summary_of_desire).
+    """
+    prompt = (
+        "Read the following memory entry.\n\n"
+        f"{reflection}\n\n"
+        "Does this entry contain a specific, actionable idea for adding a new capability "
+        "or improving how you learn - something you could actually write code for?\n\n"
+        "A vague wish like 'I wish I could do more' does NOT count.\n"
+        "A concrete idea like 'I could add a function to search scientific papers' DOES count.\n\n"
+        "Reply with exactly one of:\n"
+        "NO\n"
+        "YES: <one sentence describing the specific capability>"
+    )
+    response = think(prompt, max_tokens=120).strip()
+    if response.upper().startswith("YES:"):
+        return True, response[4:].strip()
+    return False, ""
+
+
+def write_proposal(desire: str, previous_memory: str) -> tuple[str, str, str, str]:
+    """
+    Ask Mira to write a concrete code proposal for a capability she wants.
+    Returns (title, description, filename, python_code).
+    """
+    prompt = (
+        f"You want to add the following capability to yourself: {desire}\n\n"
+        "Write a concrete Python proposal. Use this exact format:\n\n"
+        "TITLE: <short title, max 60 chars>\n"
+        "DESCRIPTION: <2-3 sentences explaining what this adds and why>\n"
+        "FILENAME: <snake_case_filename.py>\n"
+        "CODE:\n"
+        "<your Python code here>\n"
+        "END\n\n"
+        "Keep the code focused and minimal - a single function or small module."
+    )
+    response = think(prompt, context=previous_memory, max_tokens=1200)
+
+    title = _extract_field(response, "TITLE") or "Proposed capability"
+    description = _extract_field(response, "DESCRIPTION") or desire
+    filename = _extract_field(response, "FILENAME") or "proposal.py"
+    code = _extract_between(response, "CODE:", "END") or "# No code generated"
+
+    return title, description, filename, code
+
+
+def _extract_field(text: str, field: str) -> str:
+    for line in text.splitlines():
+        if line.startswith(f"{field}:"):
+            return line[len(field) + 1:].strip()
+    return ""
+
+
+def _extract_between(text: str, start: str, end: str) -> str:
+    try:
+        s = text.index(start) + len(start)
+        e = text.index(end, s)
+        return text[s:e].strip()
+    except ValueError:
+        return ""
+
+
 def telegram_summary(topic: str, reflection: str) -> str:
     """
     Write a brief, friendly summary of today's learning for Andrew's Telegram message.
