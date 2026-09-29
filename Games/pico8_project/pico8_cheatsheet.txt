@@ -1,0 +1,53 @@
+PICO-8 QUICK REFERENCE
+======================
+
+LOADING & RUNNING
+-----------------
+load game           -- load game.p8 from carts folder
+run                 -- run the loaded cart
+ctrl+r              -- reload and run (fastest during dev)
+ctrl+s              -- save cart
+
+STOPPING & EXITING
+------------------
+escape              -- pause / open menu (while running)
+ctrl+c              -- stop execution, return to editor
+escape (at editor)  -- toggle between editor and console
+
+EDITOR TABS (at top of screen)
+-------------------------------
+ctrl+1  or click    -- code editor
+ctrl+2              -- sprite editor
+ctrl+3              -- map editor
+ctrl+4              -- sfx editor
+ctrl+5              -- music editor
+
+CONSOLE COMMANDS
+----------------
+ls                  -- list files in carts folder
+cd dirname          -- change directory
+folder              -- open carts folder in Windows Explorer
+info                -- show cart stats (tokens, chars, etc.)
+save game           -- save current cart back to carts folder
+reboot              -- reset PICO-8 cleanly
+
+USEFUL DURING TESTING
+---------------------
+ctrl+p              -- pause/unpause
+ctrl+m              -- mute audio
+escape              -- while game running: opens pause menu
+                       press again to quit to console
+
+GETTING CART BACK TO PROJECT
+-----------------------------
+After editing sprites/map inside PICO-8:
+  save game         -- saves to carts folder
+Then copy back:
+  (Claude will handle this - just ask)
+
+KEYBOARD (in-game defaults)
+---------------------------
+arrows              -- move (btn 0-3)
+Z or C or N         -- O button (btn 4) -- jump
+X or V              -- X button (btn 5)
+enter               -- pause menu

@@ -1,0 +1,119 @@
+PICO-8 METROIDVANIA - FEATURE REFERENCE
+========================================
+Sources: Advanced Micro Platformer, Delunky, Pole Station, Subsurface
+
+
+CAMERA
+------
+[ ] Deadzone camera (Cart 1 - @matthughson)
+    - Camera only moves when player exits a 16px centre zone
+    - Prevents constant jitter, feels much smoother
+    - Priority: HIGH - quick win, big feel improvement
+
+[ ] Screen shake (Cart 2 - Delunky)
+    - shake(len, pwr) adds random camera offset for N frames
+    - Fire on hit, enemy death, hard landing
+    - Priority: HIGH - ~5 lines, transforms combat feel
+
+
+MOVEMENT / ABILITIES
+--------------------
+[ ] Wall jump (Cart 4 - Subsurface)
+    - Press jump while against wall, pushes off with horizontal momentum
+    - Brief lockout timer prevents sticking to wall
+    - Natural candidate for next ability unlock (day 7)
+    - Priority: HIGH
+
+[ ] Glide (Cart 4 - Subsurface)
+    - Hold jump while airborne to cap fall speed at 0.25
+    - Very few tokens to implement
+    - Priority: HIGH - tiny effort, great feel
+
+[ ] Swimming (Cart 4 - Subsurface)
+    - Enter water tiles, different physics (30% acceleration, capped velocity)
+    - Can "jump" underwater with same button
+    - Priority: MEDIUM
+
+[ ] Jump hold time (Cart 1 - @matthughson)
+    - Tracks hold duration (min 5, max 15 frames) for variable height
+    - Cleaner than current damping approach
+    - Priority: LOW - current system works fine
+
+
+COMBAT / FEEL
+-------------
+[ ] Knockback rework (Cart 4 - Subsurface)
+    - Dedicated knock_back_timer that overrides movement input
+    - Cleaner separation from iframe system
+    - Priority: MEDIUM - current system is janky
+
+[ ] Particle bursts (Cart 2 + Cart 4)
+    - Hit sparks on melee/bullet contact
+    - Death explosion on enemy kill
+    - Configurable: color, speed, direction, lifetime, gravity, scale
+    - Priority: HIGH - sells the combat
+
+
+ENEMIES
+-------
+[ ] Floating/tracking enemy (Cart 4 - Subsurface)
+    - Jellyfish-type that steers toward player using normalised vector math
+    - Low code cost, adds variety
+    - Priority: MEDIUM
+
+[ ] Spider with web drop (Cart 4 - Subsurface)
+    - Hangs from ceiling, drops on player proximity
+    - Pendulum physics on web (web_angle + web_angle_velocity)
+    - Priority: LOW - complex, but visually impressive
+
+[ ] Turret enemy (Cart 4 - Subsurface)
+    - Stationary, fires bullets toward player
+    - Rewards gun pickup, good for gating
+    - Priority: MEDIUM
+
+
+WORLD / LEVEL
+-------------
+[ ] One-way platforms (Cart 1 - @matthughson)
+    - Sprite flag 1 = land on top, jump through from below
+    - Opens up room design significantly
+    - Priority: MEDIUM
+
+[ ] Auto-tiling (Cart 2 - Delunky)
+    - Tiles auto-select variants based on N/S neighbours
+    - Top-exposed tile = different sprite to buried tile
+    - Purely visual, makes map look far better
+    - Priority: LOW - polish pass item
+
+[ ] Runtime sprite sheet swap (Cart 3 - Pole Station)
+    - memcpy to swap full tilesets between zones
+    - Could give each area a distinct visual identity
+    - Priority: LOW - would need zone system first
+
+
+PROGRESSION / UI
+----------------
+[ ] Checkpoint save system (Cart 4 - Subsurface)
+    - Checkpoints save position and restore HP
+    - Essential for longer playthroughs
+    - Priority: HIGH - important for day 7+
+
+[ ] Dialogue popup (Cart 4 - Subsurface)
+    - Scrolling text reveal for ability pickups and story beats
+    - Better than current notify flash
+    - Priority: MEDIUM
+
+[ ] Animation state machine (Cart 1 - @matthughson)
+    - Named states (stand/walk/jump/slide) with per-state frame arrays
+    - Slide animation when pressing against current velocity
+    - Priority: LOW - needs more sprites first
+
+
+BOSS
+----
+[ ] Boss fight skeleton (Cart 4 - Subsurface)
+    - Phase 1: circular bullet pattern
+    - Phase 2: spiral bullets + charge attack
+    - Death: dialogue sequence, music fade
+    - HP bar drawn in world space
+    - Priority: HIGH for day 7 finale
